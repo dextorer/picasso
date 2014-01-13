@@ -41,6 +41,7 @@ public class RequestCreator {
   private Drawable placeholderDrawable;
   private int errorResId;
   private Drawable errorDrawable;
+	private boolean useRoundDrawables;
 
   RequestCreator(Picasso picasso, Uri uri, int resourceId) {
     if (picasso.shutdown) {
@@ -49,6 +50,7 @@ public class RequestCreator {
     }
     this.picasso = picasso;
     this.data = new Request.Builder(uri, resourceId);
+	  this.useRoundDrawables = false;
   }
 
   @TestOnly RequestCreator() {
@@ -111,6 +113,12 @@ public class RequestCreator {
     this.errorDrawable = errorDrawable;
     return this;
   }
+
+	/** Enables all the Drawable objects to be rounded. **/
+	public RequestCreator round() {
+		this.useRoundDrawables = true;
+		return this;
+	}
 
   /**
    * Attempt to resize the image to fit exactly into the target {@link ImageView}'s bounds. This
@@ -335,8 +343,13 @@ public class RequestCreator {
 
     if (!data.hasImage()) {
       picasso.cancelRequest(target);
-      PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
-      return;
+	    if (useRoundDrawables) {
+		    PicassoRoundDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+	    }
+	    else {
+		    PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+	    }
+	    return;
     }
 
     if (deferred) {
@@ -346,8 +359,13 @@ public class RequestCreator {
       int measuredWidth = target.getMeasuredWidth();
       int measuredHeight = target.getMeasuredHeight();
       if (measuredWidth == 0 || measuredHeight == 0) {
-        PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
-        picasso.defer(target, new DeferredRequestCreator(this, target, callback));
+	      if (useRoundDrawables) {
+		      PicassoRoundDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+	      }
+	      else {
+		      PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+	      }
+	      picasso.defer(target, new DeferredRequestCreator(this, target, callback));
         return;
       }
       data.resize(measuredWidth, measuredHeight);
@@ -360,8 +378,12 @@ public class RequestCreator {
       Bitmap bitmap = picasso.quickMemoryCacheCheck(requestKey);
       if (bitmap != null) {
         picasso.cancelRequest(target);
-        PicassoDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade,
-            picasso.debugging);
+	      if (useRoundDrawables) {
+		      PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, picasso.debugging);
+	      }
+	      else {
+		      PicassoDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, picasso.debugging);
+	      }
         if (callback != null) {
           callback.onSuccess();
         }
@@ -369,11 +391,16 @@ public class RequestCreator {
       }
     }
 
-    PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+	  if (useRoundDrawables) {
+		  PicassoRoundDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+	  }
+	  else {
+		  PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+	  }
 
     Action action =
         new ImageViewAction(picasso, target, finalData, skipMemoryCache, noFade, errorResId,
-            errorDrawable, requestKey, callback);
+            errorDrawable, requestKey, callback, useRoundDrawables);
 
     picasso.enqueueAndSubmit(action);
   }
