@@ -32,68 +32,70 @@ import static android.provider.ContactsContract.Contacts.openContactPhotoInputSt
 import static com.squareup.picasso.Picasso.LoadedFrom.DISK;
 
 class ContactsPhotoBitmapHunter extends BitmapHunter {
-  final Context context;
+    final Context context;
 
-  ContactsPhotoBitmapHunter(Context context, Picasso picasso, Dispatcher dispatcher, Cache cache,
-      Stats stats, Action action) {
-    super(picasso, dispatcher, cache, stats, action);
-    this.context = context;
-  }
+    ContactsPhotoBitmapHunter(Context context, Picasso picasso, Dispatcher dispatcher, Cache cache,
+                              Stats stats, Action action) {
+        super(picasso, dispatcher, cache, stats, action);
+        this.context = context;
+    }
 
-  @Override Bitmap decode(Request data)
-      throws IOException {
-    InputStream is = null;
-    try {
-      is = getInputStream();
-      return decodeStream(is, data);
-    } finally {
-      Utils.closeQuietly(is);
+    @Override
+    Bitmap decode(Request data)
+            throws IOException {
+        InputStream is = null;
+        try {
+            is = getInputStream();
+            return decodeStream(is, data);
+        } finally {
+            Utils.closeQuietly(is);
+        }
     }
-  }
 
-  @Override Picasso.LoadedFrom getLoadedFrom() {
-    return DISK;
-  }
+    @Override
+    Picasso.LoadedFrom getLoadedFrom() {
+        return DISK;
+    }
 
-  private InputStream getInputStream() throws IOException {
-    ContentResolver contentResolver = context.getContentResolver();
-    Uri uri = getData().uri;
-    if (uri.toString().startsWith(ContactsContract.Contacts.CONTENT_LOOKUP_URI.toString())) {
-      uri = ContactsContract.Contacts.lookupContact(contentResolver, uri);
-      if (uri == null) {
-        return null;
-      }
+    private InputStream getInputStream() throws IOException {
+        ContentResolver contentResolver = context.getContentResolver();
+        Uri uri = getData().uri;
+        if (uri.toString().startsWith(ContactsContract.Contacts.CONTENT_LOOKUP_URI.toString())) {
+            uri = ContactsContract.Contacts.lookupContact(contentResolver, uri);
+            if (uri == null) {
+                return null;
+            }
+        }
+        if (SDK_INT < ICE_CREAM_SANDWICH) {
+            return openContactPhotoInputStream(contentResolver, uri);
+        } else {
+            return ContactPhotoStreamIcs.get(contentResolver, uri);
+        }
     }
-    if (SDK_INT < ICE_CREAM_SANDWICH) {
-      return openContactPhotoInputStream(contentResolver, uri);
-    } else {
-      return ContactPhotoStreamIcs.get(contentResolver, uri);
-    }
-  }
 
-  private Bitmap decodeStream(InputStream stream, Request data) throws IOException {
-    if (stream == null) {
-      return null;
+    private Bitmap decodeStream(InputStream stream, Request data) throws IOException {
+        if (stream == null) {
+            return null;
+        }
+        BitmapFactory.Options options = null;
+        if (data.hasSize()) {
+            options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            InputStream is = getInputStream();
+            try {
+                BitmapFactory.decodeStream(is, null, options);
+            } finally {
+                Utils.closeQuietly(is);
+            }
+            calculateInSampleSize(data.targetWidth, data.targetHeight, options);
+        }
+        return BitmapFactory.decodeStream(stream, null, options);
     }
-    BitmapFactory.Options options = null;
-    if (data.hasSize()) {
-      options = new BitmapFactory.Options();
-      options.inJustDecodeBounds = true;
-      InputStream is = getInputStream();
-      try {
-        BitmapFactory.decodeStream(is, null, options);
-      } finally {
-        Utils.closeQuietly(is);
-      }
-      calculateInSampleSize(data.targetWidth, data.targetHeight, options);
-    }
-    return BitmapFactory.decodeStream(stream, null, options);
-  }
 
-  @TargetApi(ICE_CREAM_SANDWICH)
-  private static class ContactPhotoStreamIcs {
-    static InputStream get(ContentResolver contentResolver, Uri uri) {
-      return openContactPhotoInputStream(contentResolver, uri, true);
+    @TargetApi(ICE_CREAM_SANDWICH)
+    private static class ContactPhotoStreamIcs {
+        static InputStream get(ContentResolver contentResolver, Uri uri) {
+            return openContactPhotoInputStream(contentResolver, uri, true);
+        }
     }
-  }
 }

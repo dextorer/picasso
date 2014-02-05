@@ -30,16 +30,20 @@ import static com.squareup.picasso.Picasso.LoadedFrom;
  * correct recycling behavior.
  */
 public interface Target {
-  /**
-   * Callback when an image has been successfully loaded.
-   * <p/>
-   * <strong>Note:</strong> You must not recycle the bitmap.
-   */
-  void onBitmapLoaded(Bitmap bitmap, LoadedFrom from);
+    /**
+     * Callback when an image has been successfully loaded.
+     * <p/>
+     * <strong>Note:</strong> You must not recycle the bitmap.
+     */
+    void onBitmapLoaded(Bitmap bitmap, LoadedFrom from);
 
-  /** Callback indicating the image could not be successfully loaded. */
-  void onBitmapFailed(Drawable errorDrawable);
+    /**
+     * Callback indicating the image could not be successfully loaded.
+     */
+    void onBitmapFailed(Drawable errorDrawable);
 
-  /** Callback invoked right before your request is submitted. */
-  void onPrepareLoad(Drawable placeHolderDrawable);
+    /**
+     * Callback invoked right before your request is submitted.
+     */
+    void onPrepareLoad(Drawable placeHolderDrawable);
 }

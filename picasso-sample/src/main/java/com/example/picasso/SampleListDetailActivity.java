@@ -13,79 +13,82 @@ import android.widget.TextView;
 import com.squareup.picasso.Picasso;
 
 public class SampleListDetailActivity extends PicassoSampleActivity {
-  @Override protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-    if (savedInstanceState == null) {
-      getSupportFragmentManager().beginTransaction()
-          .add(R.id.sample_content, ListFragment.newInstance())
-          .commit();
-    }
-  }
-
-  void showDetails(String url) {
-    getSupportFragmentManager().beginTransaction()
-        .replace(R.id.sample_content, DetailFragment.newInstance(url))
-        .addToBackStack(null)
-        .commit();
-  }
-
-  public static class ListFragment extends Fragment {
-    public static ListFragment newInstance() {
-      return new ListFragment();
-    }
-
-    @Override public View onCreateView(LayoutInflater inflater, ViewGroup container,
-        Bundle savedInstanceState) {
-      final SampleListDetailActivity activity = (SampleListDetailActivity) getActivity();
-      final SampleListDetailAdapter adapter = new SampleListDetailAdapter(activity);
-
-      ListView listView = (ListView) LayoutInflater.from(activity)
-          .inflate(R.layout.sample_list_detail_list, container, false);
-      listView.setAdapter(adapter);
-      listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-        @Override
-        public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
-          String url = adapter.getItem(position);
-          activity.showDetails(url);
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.sample_content, ListFragment.newInstance())
+                    .commit();
         }
-      });
-      return listView;
-    }
-  }
-
-  public static class DetailFragment extends Fragment {
-    private static final String KEY_URL = "picasso:url";
-
-    public static DetailFragment newInstance(String url) {
-      Bundle arguments = new Bundle();
-      arguments.putString(KEY_URL, url);
-
-      DetailFragment fragment = new DetailFragment();
-      fragment.setArguments(arguments);
-      return fragment;
     }
 
-    @Override public View onCreateView(LayoutInflater inflater, ViewGroup container,
-        Bundle savedInstanceState) {
-      Activity activity = getActivity();
-
-      View view = LayoutInflater.from(activity)
-          .inflate(R.layout.sample_list_detail_detail, container, false);
-
-      TextView urlView = (TextView) view.findViewById(R.id.url);
-      ImageView imageView = (ImageView) view.findViewById(R.id.photo);
-
-      Bundle arguments = getArguments();
-      String url = arguments.getString(KEY_URL);
-
-      urlView.setText(url);
-      Picasso.with(activity)
-          .load(url)
-          .fit()
-          .into(imageView);
-
-      return view;
+    void showDetails(String url) {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.sample_content, DetailFragment.newInstance(url))
+                .addToBackStack(null)
+                .commit();
     }
-  }
+
+    public static class ListFragment extends Fragment {
+        public static ListFragment newInstance() {
+            return new ListFragment();
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            final SampleListDetailActivity activity = (SampleListDetailActivity) getActivity();
+            final SampleListDetailAdapter adapter = new SampleListDetailAdapter(activity);
+
+            ListView listView = (ListView) LayoutInflater.from(activity)
+                    .inflate(R.layout.sample_list_detail_list, container, false);
+            listView.setAdapter(adapter);
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                    String url = adapter.getItem(position);
+                    activity.showDetails(url);
+                }
+            });
+            return listView;
+        }
+    }
+
+    public static class DetailFragment extends Fragment {
+        private static final String KEY_URL = "picasso:url";
+
+        public static DetailFragment newInstance(String url) {
+            Bundle arguments = new Bundle();
+            arguments.putString(KEY_URL, url);
+
+            DetailFragment fragment = new DetailFragment();
+            fragment.setArguments(arguments);
+            return fragment;
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            Activity activity = getActivity();
+
+            View view = LayoutInflater.from(activity)
+                    .inflate(R.layout.sample_list_detail_detail, container, false);
+
+            TextView urlView = (TextView) view.findViewById(R.id.url);
+            ImageView imageView = (ImageView) view.findViewById(R.id.photo);
+
+            Bundle arguments = getArguments();
+            String url = arguments.getString(KEY_URL);
+
+            urlView.setText(url);
+            Picasso.with(activity)
+                    .load(url)
+                    .fit()
+                    .into(imageView);
+
+            return view;
+        }
+    }
 }

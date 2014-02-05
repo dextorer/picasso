@@ -15,12 +15,12 @@
  */
 package com.squareup.picasso;
 
+import android.R;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.*;
-import android.graphics.drawable.AnimationDrawable;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
+import android.graphics.drawable.*;
+import android.graphics.drawable.shapes.OvalShape;
 import android.os.SystemClock;
 import android.widget.ImageView;
 
@@ -28,178 +28,237 @@ import static android.graphics.Color.WHITE;
 import static com.squareup.picasso.Picasso.LoadedFrom.MEMORY;
 
 final class PicassoRoundDrawable extends Drawable {
-	// Only accessed from main thread.
-	private static final Paint DEBUG_PAINT = new Paint();
+    // Only accessed from main thread.
+    private static final Paint DEBUG_PAINT = new Paint();
 
-	private static final float FADE_DURATION = 200f; //ms
+    private static final float FADE_DURATION = 350f; //ms
 
-	private final float mCornerRadius;
-	private final RectF mRect = new RectF();
-	private final BitmapShader mBitmapShader;
-	private final Paint mPaint;
+    private final float mCornerRadius;
+    private final RectF mRect = new RectF();
+    private final BitmapShader mBitmapShader;
+    private final Paint mPaint;
 
+    private int borderSize;
+    private int borderColor;
 
-	/**
-	 * Create or update the drawable on the target {@link android.widget.ImageView} to display the supplied bitmap
-	 * image.
-	 */
-	static void setBitmap(ImageView target, Context context, Bitmap bitmap,
-	                      Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging) {
-		Drawable placeholder = target.getDrawable();
-		if (placeholder instanceof AnimationDrawable) {
-			((AnimationDrawable) placeholder).stop();
-		}
-		PicassoRoundDrawable drawable =
-				new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, debugging);
-		target.setImageDrawable(drawable);
-	}
+    /**
+     * Create or update the drawable on the target {@link android.widget.ImageView} to display the supplied bitmap
+     * image.
+     */
+    static PicassoRoundDrawable setBitmap(ImageView target, Context context, Bitmap bitmap,
+                                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging) {
+        Drawable placeholder = target.getDrawable();
+        if (placeholder instanceof AnimationDrawable) {
+            ((AnimationDrawable) placeholder).stop();
+        }
 
-	/**
-	 * Create or update the drawable on the target {@link android.widget.ImageView} to display the supplied
-	 * placeholder image.
-	 */
-	static void setPlaceholder(ImageView target, int placeholderResId, Drawable placeholderDrawable) {
-		if (placeholderResId != 0) {
-			target.setImageResource(placeholderResId);
-		} else {
-			target.setImageDrawable(placeholderDrawable);
-		}
-		if (target.getDrawable() instanceof AnimationDrawable) {
-			((AnimationDrawable) target.getDrawable()).start();
-		}
-	}
+        int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
 
-	private final boolean debugging;
-	private final float density;
-	private final Picasso.LoadedFrom loadedFrom;
-	final BitmapDrawable image;
+        PicassoRoundDrawable drawable =
+                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, debugging);
+        target.setBackground(createStateListDrawable(context, minMeasure, drawable));
+        target.setImageDrawable(drawable);
 
-	Drawable placeholder;
+        return drawable;
+    }
 
-	long startTimeMillis;
-	boolean animating;
-	int alpha = 0xFF;
+    static PicassoRoundDrawable setBitmap(ImageView target, Context context, Bitmap bitmap,
+                                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging, int borderSize, int borderColor) {
+        Drawable placeholder = target.getDrawable();
+        if (placeholder instanceof AnimationDrawable) {
+            ((AnimationDrawable) placeholder).stop();
+        }
 
-	PicassoRoundDrawable(Context context, Drawable placeholder, Bitmap bitmap,
-	                     Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging) {
-		Resources res = context.getResources();
+        int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
 
-		this.debugging = debugging;
-		this.density = res.getDisplayMetrics().density;
+        PicassoRoundDrawable drawable =
+                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, debugging);
 
-		this.loadedFrom = loadedFrom;
+        drawable.setBorder(borderSize, borderColor);
 
-		this.image = new BitmapDrawable(res, bitmap);
+        target.setBackground(createStateListDrawable(context, minMeasure, drawable));
+        target.setImageDrawable(drawable);
 
-		boolean fade = loadedFrom != MEMORY && !noFade;
-		if (fade) {
-			this.placeholder = placeholder;
-			animating = true;
-			startTimeMillis = SystemClock.uptimeMillis();
-		}
+        return drawable;
+    }
 
-		int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
-		mCornerRadius = minMeasure / 2;
+    static StateListDrawable createStateListDrawable(Context context, int size, PicassoRoundDrawable drawable) {
+        StateListDrawable stateListDrawable = new StateListDrawable();
 
-		mBitmapShader = new BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+        OvalShape ovalShape = new OvalShape();
+        ovalShape.resize(size, size);
+        ShapeDrawable shapeDrawable = new ShapeDrawable(ovalShape);
 
-		mPaint = new Paint();
-		mPaint.setAntiAlias(true);
-		mPaint.setShader(mBitmapShader);
+	    int color;
+	    try {
+	        color = context.getResources().getColor(drawable.borderColor);
+	    }
+	    catch (Resources.NotFoundException e) {
+			color = R.color.white;
+	    }
 
-	}
+	    shapeDrawable.getPaint().setColor(context.getResources().getColor(color));
 
-	@Override
-	public void draw(Canvas canvas) {
+        stateListDrawable.addState(new int[]{android.R.attr.state_pressed}, shapeDrawable);
+        stateListDrawable.addState(new int[]{android.R.attr.state_focused}, shapeDrawable);
+        stateListDrawable.addState(new int[]{}, null);
 
-		if (!animating) {
-			canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
-		} else {
-			float normalized = (SystemClock.uptimeMillis() - startTimeMillis) / FADE_DURATION;
-			if (normalized >= 1f) {
-				animating = false;
-				placeholder = null;
-				canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
-			} else {
-				if (placeholder != null) {
-					placeholder.draw(canvas);
-				}
+        return stateListDrawable;
+    }
 
-				int partialAlpha = (int) (alpha * normalized);
-				mPaint.setAlpha(partialAlpha);
-				canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
-				mPaint.setAlpha(alpha);
-				invalidateSelf();
-			}
-		}
+    /**
+     * Create or update the drawable on the target {@link android.widget.ImageView} to display the supplied
+     * placeholder image.
+     */
+    static void setPlaceholder(ImageView target, int placeholderResId, Drawable placeholderDrawable) {
+        if (placeholderResId != 0) {
+            target.setImageResource(placeholderResId);
+        } else {
+            target.setImageDrawable(placeholderDrawable);
+        }
 
-		if (debugging) {
-			drawDebugIndicator(canvas);
-		}
-	}
+        if (target.getDrawable() instanceof AnimationDrawable) {
+            ((AnimationDrawable) target.getDrawable()).start();
+        }
+    }
 
-	@Override
-	public int getIntrinsicWidth() {
-		return image.getIntrinsicWidth();
-	}
+    public void setBorder(int borderSize, int borderColor) {
+        this.borderSize = borderSize;
+        this.borderColor = borderColor;
+    }
 
-	@Override
-	public int getIntrinsicHeight() {
-		return image.getIntrinsicHeight();
-	}
+    private final boolean debugging;
+    private final float density;
+    private final Picasso.LoadedFrom loadedFrom;
+    final BitmapDrawable image;
 
-	@Override
-	public void setAlpha(int alpha) {
-		this.alpha = alpha;
-		if (placeholder != null) {
-			placeholder.setAlpha(alpha);
-		}
-		image.setAlpha(alpha);
-	}
+    Drawable placeholder;
 
-	@Override
-	public void setColorFilter(ColorFilter cf) {
-		if (placeholder != null) {
-			placeholder.setColorFilter(cf);
-		}
-		image.setColorFilter(cf);
-	}
+    long startTimeMillis;
+    boolean animating;
+    int alpha = 0xFF;
 
-	@Override
-	public int getOpacity() {
-		return image.getOpacity();
-	}
+    PicassoRoundDrawable(Context context, Drawable placeholder, Bitmap bitmap,
+                         Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging) {
+        Resources res = context.getResources();
 
-	@Override
-	protected void onBoundsChange(Rect bounds) {
-		super.onBoundsChange(bounds);
-		mRect.set(0, 0, bounds.width(), bounds.height());
+        this.debugging = debugging;
+        this.density = res.getDisplayMetrics().density;
+
+        this.loadedFrom = loadedFrom;
+
+        this.image = new BitmapDrawable(res, bitmap);
+
+        boolean fade = loadedFrom != MEMORY && !noFade;
+        if (fade) {
+            this.placeholder = placeholder;
+            animating = true;
+            startTimeMillis = SystemClock.uptimeMillis();
+        }
+
+        int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
+        mCornerRadius = minMeasure / 2;
+
+        mBitmapShader = new BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+
+        mPaint = new Paint();
+        mPaint.setAntiAlias(true);
+        mPaint.setShader(mBitmapShader);
+
+    }
+
+    @Override
+    public void draw(Canvas canvas) {
+
+        if (!animating) {
+            canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
+        } else {
+            float normalized = (SystemClock.uptimeMillis() - startTimeMillis) / FADE_DURATION;
+            if (normalized >= 1f) {
+                animating = false;
+                placeholder = null;
+                canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
+            } else {
+                if (placeholder != null) {
+                    placeholder.draw(canvas);
+                }
+
+                int partialAlpha = (int) (alpha * normalized);
+                mPaint.setAlpha(partialAlpha);
+                canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
+                mPaint.setAlpha(alpha);
+                invalidateSelf();
+            }
+        }
+
+        if (debugging) {
+            drawDebugIndicator(canvas);
+        }
+    }
+
+    @Override
+    public int getIntrinsicWidth() {
+        return image.getIntrinsicWidth();
+    }
+
+    @Override
+    public int getIntrinsicHeight() {
+        return image.getIntrinsicHeight();
+    }
+
+    @Override
+    public void setAlpha(int alpha) {
+        this.alpha = alpha;
+        if (placeholder != null) {
+            placeholder.setAlpha(alpha);
+        }
+        image.setAlpha(alpha);
+    }
+
+    @Override
+    public void setColorFilter(ColorFilter cf) {
+        if (placeholder != null) {
+            placeholder.setColorFilter(cf);
+        }
+        image.setColorFilter(cf);
+    }
+
+    @Override
+    public int getOpacity() {
+        return image.getOpacity();
+    }
+
+    @Override
+    protected void onBoundsChange(Rect bounds) {
+        super.onBoundsChange(bounds);
+        System.out.println("Border: " + borderSize);
+        mRect.set(borderSize, borderSize, bounds.width() - borderSize, bounds.height() - borderSize);
 
 //    image.setBounds(bounds);
-		if (placeholder != null) {
-			placeholder.setBounds(bounds);
-		}
-	}
+        if (placeholder != null) {
+            placeholder.setBounds(bounds);
+        }
+    }
 
-	private void drawDebugIndicator(Canvas canvas) {
-		DEBUG_PAINT.setColor(WHITE);
-		Path path = getTrianglePath(new Point(0, 0), (int) (16 * density));
-		canvas.drawPath(path, DEBUG_PAINT);
+    private void drawDebugIndicator(Canvas canvas) {
+        DEBUG_PAINT.setColor(WHITE);
+        Path path = getTrianglePath(new Point(0, 0), (int) (16 * density));
+        canvas.drawPath(path, DEBUG_PAINT);
 
-		DEBUG_PAINT.setColor(loadedFrom.debugColor);
-		path = getTrianglePath(new Point(0, 0), (int) (15 * density));
-		canvas.drawPath(path, DEBUG_PAINT);
-	}
+        DEBUG_PAINT.setColor(loadedFrom.debugColor);
+        path = getTrianglePath(new Point(0, 0), (int) (15 * density));
+        canvas.drawPath(path, DEBUG_PAINT);
+    }
 
-	private static Path getTrianglePath(Point p1, int width) {
-		Point p2 = new Point(p1.x + width, p1.y);
-		Point p3 = new Point(p1.x, p1.y + width);
+    private static Path getTrianglePath(Point p1, int width) {
+        Point p2 = new Point(p1.x + width, p1.y);
+        Point p3 = new Point(p1.x, p1.y + width);
 
-		Path path = new Path();
-		path.moveTo(p1.x, p1.y);
-		path.lineTo(p2.x, p2.y);
-		path.lineTo(p3.x, p3.y);
+        Path path = new Path();
+        path.moveTo(p1.x, p1.y);
+        path.lineTo(p2.x, p2.y);
+        path.lineTo(p3.x, p3.y);
 
-		return path;
-	}
+        return path;
+    }
 }

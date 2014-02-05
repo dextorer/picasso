@@ -28,67 +28,71 @@ import android.widget.ListView;
 import static android.provider.ContactsContract.Contacts;
 
 public class SampleContactsActivity extends PicassoSampleActivity
-    implements LoaderManager.LoaderCallbacks<Cursor> {
-  private static final boolean IS_HONEYCOMB =
-      Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
+        implements LoaderManager.LoaderCallbacks<Cursor> {
+    private static final boolean IS_HONEYCOMB =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
 
-  private SampleContactsAdapter adapter;
+    private SampleContactsAdapter adapter;
 
-  @Override protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.sample_contacts_activity);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.sample_contacts_activity);
 
-    adapter = new SampleContactsAdapter(this);
+        adapter = new SampleContactsAdapter(this);
 
-    ListView lv = (ListView) findViewById(android.R.id.list);
-    lv.setAdapter(adapter);
+        ListView lv = (ListView) findViewById(android.R.id.list);
+        lv.setAdapter(adapter);
 
-    getSupportLoaderManager().initLoader(ContactsQuery.QUERY_ID, null, this);
-  }
-
-  @Override public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-    if (id == ContactsQuery.QUERY_ID) {
-      return new CursorLoader(this, //
-          ContactsQuery.CONTENT_URI, //
-          ContactsQuery.PROJECTION, //
-          ContactsQuery.SELECTION, //
-          null, //
-          ContactsQuery.SORT_ORDER);
+        getSupportLoaderManager().initLoader(ContactsQuery.QUERY_ID, null, this);
     }
-    return null;
-  }
 
-  @Override public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-    adapter.swapCursor(data);
-  }
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        if (id == ContactsQuery.QUERY_ID) {
+            return new CursorLoader(this, //
+                    ContactsQuery.CONTENT_URI, //
+                    ContactsQuery.PROJECTION, //
+                    ContactsQuery.SELECTION, //
+                    null, //
+                    ContactsQuery.SORT_ORDER);
+        }
+        return null;
+    }
 
-  @Override public void onLoaderReset(Loader<Cursor> loader) {
-    adapter.swapCursor(null);
-  }
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        adapter.swapCursor(data);
+    }
 
-  interface ContactsQuery {
-    int QUERY_ID = 1;
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        adapter.swapCursor(null);
+    }
 
-    Uri CONTENT_URI = Contacts.CONTENT_URI;
+    interface ContactsQuery {
+        int QUERY_ID = 1;
 
-    String SELECTION = (IS_HONEYCOMB ? Contacts.DISPLAY_NAME_PRIMARY : Contacts.DISPLAY_NAME)
-        + "<>''"
-        + " AND "
-        + Contacts.IN_VISIBLE_GROUP
-        + "=1";
+        Uri CONTENT_URI = Contacts.CONTENT_URI;
 
-    String SORT_ORDER = IS_HONEYCOMB ? Contacts.SORT_KEY_PRIMARY : Contacts.DISPLAY_NAME;
+        String SELECTION = (IS_HONEYCOMB ? Contacts.DISPLAY_NAME_PRIMARY : Contacts.DISPLAY_NAME)
+                + "<>''"
+                + " AND "
+                + Contacts.IN_VISIBLE_GROUP
+                + "=1";
 
-    String[] PROJECTION = {
-        Contacts._ID, //
-        Contacts.LOOKUP_KEY, //
-        IS_HONEYCOMB ? Contacts.DISPLAY_NAME_PRIMARY : Contacts.DISPLAY_NAME, //
-        IS_HONEYCOMB ? Contacts.PHOTO_THUMBNAIL_URI : Contacts._ID, //
-        SORT_ORDER
-    };
+        String SORT_ORDER = IS_HONEYCOMB ? Contacts.SORT_KEY_PRIMARY : Contacts.DISPLAY_NAME;
 
-    int ID = 0;
-    int LOOKUP_KEY = 1;
-    int DISPLAY_NAME = 2;
-  }
+        String[] PROJECTION = {
+                Contacts._ID, //
+                Contacts.LOOKUP_KEY, //
+                IS_HONEYCOMB ? Contacts.DISPLAY_NAME_PRIMARY : Contacts.DISPLAY_NAME, //
+                IS_HONEYCOMB ? Contacts.PHOTO_THUMBNAIL_URI : Contacts._ID, //
+                SORT_ORDER
+        };
+
+        int ID = 0;
+        int LOOKUP_KEY = 1;
+        int DISPLAY_NAME = 2;
+    }
 }

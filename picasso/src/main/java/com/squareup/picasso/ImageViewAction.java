@@ -17,67 +17,81 @@ package com.squareup.picasso;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
 
 class ImageViewAction extends Action<ImageView> {
 
-  Callback callback;
-	boolean round;
+    Callback callback;
+    boolean round;
+    int borderSize;
+    int borderColor;
 
-  ImageViewAction(Picasso picasso, ImageView imageView, Request data, boolean skipCache,
-      boolean noFade, int errorResId, Drawable errorDrawable, String key, Callback callback, boolean round) {
-    super(picasso, imageView, data, skipCache, noFade, errorResId, errorDrawable, key);
-    this.callback = callback;
-	  this.round = round;
-  }
-
-  @Override public void complete(Bitmap result, Picasso.LoadedFrom from) {
-    if (result == null) {
-      throw new AssertionError(
-          String.format("Attempted to complete action with no result!\n%s", this));
+    ImageViewAction(Picasso picasso, ImageView imageView, Request data, boolean skipCache,
+                    boolean noFade, int errorResId, Drawable errorDrawable, String key, Callback callback, boolean round,
+                    int borderSize, int borderColor) {
+        super(picasso, imageView, data, skipCache, noFade, errorResId, errorDrawable, key);
+        this.callback = callback;
+        this.round = round;
+        this.borderSize = borderSize;
+        this.borderColor = borderColor;
     }
 
-    ImageView target = this.target.get();
-    if (target == null) {
-      return;
+    @Override
+    public void complete(Bitmap result, Picasso.LoadedFrom from) {
+        if (result == null) {
+            throw new AssertionError(
+                    String.format("Attempted to complete action with no result!\n%s", this));
+        }
+
+        ImageView target = this.target.get();
+        if (target == null) {
+            return;
+        }
+
+        Context context = picasso.context;
+        boolean debugging = picasso.debugging;
+
+        if (round) {
+            System.out.println("Border (IVA): " + borderSize);
+            if (borderSize > 0) {
+                PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, debugging, borderSize, borderColor);
+            }
+            else {
+                PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, debugging);
+            }
+        } else {
+            PicassoDrawable.setBitmap(target, context, result, from, noFade, debugging);
+        }
+
+        if (callback != null) {
+            callback.onSuccess();
+        }
     }
 
-    Context context = picasso.context;
-    boolean debugging = picasso.debugging;
+    @Override
+    public void error() {
+        ImageView target = this.target.get();
+        if (target == null) {
+            return;
+        }
+        if (errorResId != 0) {
+            target.setImageResource(errorResId);
+        } else if (errorDrawable != null) {
+            target.setImageDrawable(errorDrawable);
+        }
 
-	  if (round) {
-		  PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, debugging);
-	  }
-	  else {
-		  PicassoDrawable.setBitmap(target, context, result, from, noFade, debugging);
-	  }
-
-    if (callback != null) {
-      callback.onSuccess();
-    }
-  }
-
-  @Override public void error() {
-    ImageView target = this.target.get();
-    if (target == null) {
-      return;
-    }
-    if (errorResId != 0) {
-      target.setImageResource(errorResId);
-    } else if (errorDrawable != null) {
-      target.setImageDrawable(errorDrawable);
+        if (callback != null) {
+            callback.onError();
+        }
     }
 
-    if (callback != null) {
-      callback.onError();
+    @Override
+    void cancel() {
+        super.cancel();
+        if (callback != null) {
+            callback = null;
+        }
     }
-  }
-
-  @Override void cancel() {
-    super.cancel();
-    if (callback != null) {
-      callback = null;
-    }
-  }
 }
