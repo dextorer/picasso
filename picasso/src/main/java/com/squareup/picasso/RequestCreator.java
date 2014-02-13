@@ -431,7 +431,7 @@ if (useRoundDrawables) {
         }
     Action action =
         new ImageViewAction(picasso, target, finalData, skipMemoryCache, noFade, errorResId,
-            errorDrawable, requestKey, callback);
+            errorDrawable, requestKey, callback, useRoundDrawables, borderSize, borderColor);
 
     picasso.enqueueAndSubmit(action);
   }

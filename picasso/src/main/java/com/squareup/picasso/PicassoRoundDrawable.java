@@ -22,6 +22,8 @@ import android.graphics.*;
 import android.graphics.drawable.*;
 import android.graphics.drawable.shapes.OvalShape;
 import android.os.SystemClock;
+import android.util.Log;
+import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 
 import static android.graphics.Color.WHITE;
@@ -33,10 +35,13 @@ final class PicassoRoundDrawable extends Drawable {
 
     private static final float FADE_DURATION = 350f; //ms
 
-    private final float mCornerRadius;
+    private float mCornerRadius;
     private final RectF mRect = new RectF();
-    private final BitmapShader mBitmapShader;
-    private final Paint mPaint;
+    private BitmapShader mBitmapShader;
+    private Paint mPaint;
+
+    private int targetWidth;
+    private int targetHeight;
 
     private int borderSize;
     private int borderColor;
@@ -55,7 +60,7 @@ final class PicassoRoundDrawable extends Drawable {
         int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
 
         PicassoRoundDrawable drawable =
-                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, debugging);
+                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, debugging, target);
         target.setBackground(createStateListDrawable(context, minMeasure, drawable));
         target.setImageDrawable(drawable);
 
@@ -72,7 +77,7 @@ final class PicassoRoundDrawable extends Drawable {
         int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
 
         PicassoRoundDrawable drawable =
-                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, debugging);
+                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, debugging, target);
 
         drawable.setBorder(borderSize, borderColor);
 
@@ -127,10 +132,10 @@ final class PicassoRoundDrawable extends Drawable {
         this.borderColor = borderColor;
     }
 
-    private final boolean debugging;
-    private final float density;
-    private final Picasso.LoadedFrom loadedFrom;
-    final BitmapDrawable image;
+    private boolean debugging;
+    private float density;
+    private Picasso.LoadedFrom loadedFrom;
+    BitmapDrawable image;
 
     Drawable placeholder;
 
@@ -139,7 +144,7 @@ final class PicassoRoundDrawable extends Drawable {
     int alpha = 0xFF;
 
     PicassoRoundDrawable(Context context, Drawable placeholder, Bitmap bitmap,
-                         Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging) {
+                         Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging, final ImageView target) {
         Resources res = context.getResources();
 
         this.debugging = debugging;
@@ -148,6 +153,18 @@ final class PicassoRoundDrawable extends Drawable {
         this.loadedFrom = loadedFrom;
 
         this.image = new BitmapDrawable(res, bitmap);
+
+        target.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                targetHeight = target.getMeasuredHeight();
+                targetWidth = target.getMeasuredWidth();
+
+                target.getViewTreeObserver().removeOnPreDrawListener(this);
+
+                return true;
+            }
+        });
 
         boolean fade = loadedFrom != MEMORY && !noFade;
         if (fade) {
@@ -169,6 +186,9 @@ final class PicassoRoundDrawable extends Drawable {
 
     @Override
     public void draw(Canvas canvas) {
+
+        int minTargetMeasure = targetHeight > targetWidth ? targetWidth : targetHeight;
+        mCornerRadius = mCornerRadius > minTargetMeasure / 2 ? minTargetMeasure / 2 : mCornerRadius;
 
         if (!animating) {
             canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
