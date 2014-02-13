@@ -31,49 +31,45 @@ import static android.provider.ContactsContract.Contacts;
 import static com.example.picasso.SampleContactsActivity.ContactsQuery;
 
 class SampleContactsAdapter extends CursorAdapter {
-    private final LayoutInflater inflater;
+  private final LayoutInflater inflater;
 
-    public SampleContactsAdapter(Context context) {
-        super(context, null, 0);
-        inflater = LayoutInflater.from(context);
-    }
+  public SampleContactsAdapter(Context context) {
+    super(context, null, 0);
+    inflater = LayoutInflater.from(context);
+  }
 
-    @Override
-    public View newView(Context context, Cursor cursor, ViewGroup viewGroup) {
-        View itemLayout = inflater.inflate(R.layout.sample_contacts_activity_item, viewGroup, false);
+  @Override public View newView(Context context, Cursor cursor, ViewGroup viewGroup) {
+    View itemLayout = inflater.inflate(R.layout.sample_contacts_activity_item, viewGroup, false);
 
-        ViewHolder holder = new ViewHolder();
-        itemLayout.setTag(holder);
+    ViewHolder holder = new ViewHolder();
+    holder.text1 = (TextView) itemLayout.findViewById(android.R.id.text1);
+    holder.icon = (QuickContactBadge) itemLayout.findViewById(android.R.id.icon);
 
-        holder.text1 = (TextView) itemLayout.findViewById(android.R.id.text1);
-        holder.icon = (QuickContactBadge) itemLayout.findViewById(android.R.id.icon);
+    itemLayout.setTag(holder);
 
-        return itemLayout;
-    }
+    return itemLayout;
+  }
 
-    @Override
-    public void bindView(View view, Context context, Cursor cursor) {
-        ViewHolder holder = (ViewHolder) view.getTag();
+  @Override public void bindView(View view, Context context, Cursor cursor) {
+    Uri contactUri = Contacts.getLookupUri(cursor.getLong(ContactsQuery.ID),
+        cursor.getString(ContactsQuery.LOOKUP_KEY));
 
-        holder.text1.setText(cursor.getString(ContactsQuery.DISPLAY_NAME));
+    ViewHolder holder = (ViewHolder) view.getTag();
+    holder.text1.setText(cursor.getString(ContactsQuery.DISPLAY_NAME));
+    holder.icon.assignContactUri(contactUri);
 
-        Uri contactUri = Contacts.getLookupUri(cursor.getLong(ContactsQuery.ID),
-                cursor.getString(ContactsQuery.LOOKUP_KEY));
-        holder.icon.assignContactUri(contactUri);
+    Picasso.with(context)
+        .load(contactUri)
+        .placeholder(R.drawable.contact_picture_placeholder)
+        .into(holder.icon);
+  }
 
-        Picasso.with(context)
-                .load(contactUri)
-                .placeholder(R.drawable.contact_picture_placeholder)
-                .into(holder.icon);
-    }
+  @Override public int getCount() {
+    return getCursor() == null ? 0 : super.getCount();
+  }
 
-    @Override
-    public int getCount() {
-        return getCursor() == null ? 0 : super.getCount();
-    }
-
-    private static class ViewHolder {
-        TextView text1;
-        QuickContactBadge icon;
-    }
+  private static class ViewHolder {
+    TextView text1;
+    QuickContactBadge icon;
+  }
 }

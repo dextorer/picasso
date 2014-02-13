@@ -32,6 +32,7 @@ import org.robolectric.shadows.ShadowBitmap;
 import org.robolectric.shadows.ShadowMatrix;
 
 import static android.graphics.Bitmap.Config.ARGB_8888;
+import static com.squareup.picasso.BitmapHunter.createBitmapOptions;
 import static com.squareup.picasso.BitmapHunter.forRequest;
 import static com.squareup.picasso.BitmapHunter.transformResult;
 import static com.squareup.picasso.Picasso.LoadedFrom.MEMORY;
@@ -44,8 +45,14 @@ import static com.squareup.picasso.TestUtils.CONTENT_1_URL;
 import static com.squareup.picasso.TestUtils.CONTENT_KEY_1;
 import static com.squareup.picasso.TestUtils.FILE_1_URL;
 import static com.squareup.picasso.TestUtils.FILE_KEY_1;
+import static com.squareup.picasso.TestUtils.MEDIA_STORE_CONTENT_1_URL;
+import static com.squareup.picasso.TestUtils.MEDIA_STORE_CONTENT_KEY_1;
 import static com.squareup.picasso.TestUtils.RESOURCE_ID_1;
 import static com.squareup.picasso.TestUtils.RESOURCE_ID_KEY_1;
+import static com.squareup.picasso.TestUtils.RESOURCE_ID_URI;
+import static com.squareup.picasso.TestUtils.RESOURCE_TYPE_URI;
+import static com.squareup.picasso.TestUtils.RESOURCE_ID_URI_KEY;
+import static com.squareup.picasso.TestUtils.RESOURCE_TYPE_URI_KEY;
 import static com.squareup.picasso.TestUtils.URI_1;
 import static com.squareup.picasso.TestUtils.URI_KEY_1;
 import static com.squareup.picasso.TestUtils.mockAction;
@@ -98,10 +105,35 @@ public class BitmapHunterTest {
     verify(dispatcher).dispatchFailed(hunter);
   }
 
+  @Test public void responseExcpetionDispatchFailed() throws Exception {
+    Action action = mockAction(URI_KEY_1, URI_1);
+    BitmapHunter hunter = new TestableBitmapHunter(picasso, dispatcher, cache, stats, action, null,
+        new Downloader.ResponseException("Test"));
+    hunter.run();
+    verify(dispatcher).dispatchFailed(hunter);
+  }
+
+  @Test public void outOfMemoryDispatchFailed() throws Exception {
+    when(stats.createSnapshot()).thenReturn(mock(StatsSnapshot.class));
+
+    Action action = mockAction(URI_KEY_1, URI_1);
+    BitmapHunter hunter = new OOMBitmapHunter(picasso, dispatcher, cache, stats, action);
+    try {
+      hunter.run();
+    } catch (Throwable t) {
+      Exception exception = hunter.getException();
+      verify(dispatcher).dispatchFailed(hunter);
+      verify(stats).createSnapshot();
+      assertThat(hunter.getResult()).isNull();
+      assertThat(exception).isNotNull();
+      assertThat(exception.getCause()).isInstanceOf(OutOfMemoryError.class);
+    }
+  }
+
   @Test public void runWithIoExceptionDispatchRetry() throws Exception {
     Action action = mockAction(URI_KEY_1, URI_1);
-    BitmapHunter hunter =
-        new TestableBitmapHunter(picasso, dispatcher, cache, stats, action, null, true);
+    BitmapHunter hunter = new TestableBitmapHunter(picasso, dispatcher, cache, stats, action, null,
+        new IOException());
     hunter.run();
     verify(dispatcher).dispatchRetry(hunter);
   }
@@ -162,7 +194,14 @@ public class BitmapHunterTest {
     Action action = mockAction(CONTENT_KEY_1, CONTENT_1_URL);
     BitmapHunter hunter =
         forRequest(context, picasso, dispatcher, cache, stats, action, downloader);
-    assertThat(hunter).isInstanceOf(ContentProviderBitmapHunter.class);
+    assertThat(hunter).isInstanceOf(ContentStreamBitmapHunter.class);
+  }
+
+  @Test public void forMediaStoreRequest() throws Exception {
+    Action action = mockAction(MEDIA_STORE_CONTENT_KEY_1, MEDIA_STORE_CONTENT_1_URL);
+    BitmapHunter hunter =
+        forRequest(context, picasso, dispatcher, cache, stats, action, downloader);
+    assertThat(hunter).isInstanceOf(MediaStoreBitmapHunter.class);
   }
 
   @Test public void forContactsPhotoRequest() throws Exception {
@@ -188,6 +227,20 @@ public class BitmapHunterTest {
 
   @Test public void forAndroidResourceRequest() throws Exception {
     Action action = mockAction(RESOURCE_ID_KEY_1, null, null, RESOURCE_ID_1);
+    BitmapHunter hunter =
+        forRequest(context, picasso, dispatcher, cache, stats, action, downloader);
+    assertThat(hunter).isInstanceOf(ResourceBitmapHunter.class);
+  }
+
+  @Test public void forAndroidResourceUriWithId() throws Exception {
+    Action action = mockAction(RESOURCE_ID_URI_KEY, RESOURCE_ID_URI);
+    BitmapHunter hunter =
+        forRequest(context, picasso, dispatcher, cache, stats, action, downloader);
+    assertThat(hunter).isInstanceOf(ResourceBitmapHunter.class);
+  }
+
+  @Test public void forAndroidResourceUriWithType() throws Exception {
+    Action action = mockAction(RESOURCE_TYPE_URI_KEY, RESOURCE_TYPE_URI);
     BitmapHunter hunter =
         forRequest(context, picasso, dispatcher, cache, stats, action, downloader);
     assertThat(hunter).isInstanceOf(ResourceBitmapHunter.class);
@@ -274,6 +327,16 @@ public class BitmapHunterTest {
     Matrix matrix = shadowBitmap.getCreatedFromMatrix();
     ShadowMatrix shadowMatrix = shadowOf(matrix);
     assertThat(shadowMatrix.getPreOperations()).containsOnly("scale 2.0 1.5");
+  }
+
+  @Test public void bitmapConfig() throws Exception {
+    for (Bitmap.Config config : Bitmap.Config.values()) {
+      Request data = new Request.Builder(URI_1).config(config).build();
+      Request copy = data.buildUpon().build();
+
+      assertThat(createBitmapOptions(data).inPreferredConfig).isSameAs(config);
+      assertThat(createBitmapOptions(copy).inPreferredConfig).isSameAs(config);
+    }
   }
 
   @Test public void centerCropTallTooSmall() throws Exception {
@@ -414,7 +477,7 @@ public class BitmapHunterTest {
 
   private static class TestableBitmapHunter extends BitmapHunter {
     private final Bitmap result;
-    private final boolean throwException;
+    private final IOException exception;
 
     TestableBitmapHunter(Picasso picasso, Dispatcher dispatcher, Cache cache, Stats stats,
         Action action) {
@@ -423,25 +486,37 @@ public class BitmapHunterTest {
 
     TestableBitmapHunter(Picasso picasso, Dispatcher dispatcher, Cache cache, Stats stats,
         Action action, Bitmap result) {
-      this(picasso, dispatcher, cache, stats, action, result, false);
+      this(picasso, dispatcher, cache, stats, action, result, null);
     }
 
     TestableBitmapHunter(Picasso picasso, Dispatcher dispatcher, Cache cache, Stats stats,
-        Action action, Bitmap result, boolean throwException) {
+        Action action, Bitmap result, IOException exception) {
       super(picasso, dispatcher, cache, stats, action);
       this.result = result;
-      this.throwException = throwException;
+      this.exception = exception;
     }
 
     @Override Bitmap decode(Request data) throws IOException {
-      if (throwException) {
-        throw new IOException("Failed.");
+      if (exception != null) {
+        throw exception;
       }
       return result;
     }
 
     @Override Picasso.LoadedFrom getLoadedFrom() {
       return MEMORY;
+    }
+  }
+
+  private static class OOMBitmapHunter extends TestableBitmapHunter {
+
+    OOMBitmapHunter(Picasso picasso, Dispatcher dispatcher, Cache cache, Stats stats,
+        Action action) {
+      super(picasso, dispatcher, cache, stats, action);
+    }
+
+    @Override Bitmap decode(Request data) throws IOException {
+      throw new OutOfMemoryError();
     }
   }
 }
