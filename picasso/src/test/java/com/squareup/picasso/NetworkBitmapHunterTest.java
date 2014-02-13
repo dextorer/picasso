@@ -19,7 +19,9 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.NetworkInfo;
 import android.net.Uri;
+
 import java.io.IOException;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,84 +45,99 @@ import static org.mockito.MockitoAnnotations.initMocks;
 @Config(manifest = Config.NONE)
 public class NetworkBitmapHunterTest {
 
-  @Mock Context context;
-  @Mock Picasso picasso;
-  @Mock Cache cache;
-  @Mock Stats stats;
-  @Mock Dispatcher dispatcher;
-  @Mock Downloader downloader;
+    @Mock
+    Context context;
+    @Mock
+    Picasso picasso;
+    @Mock
+    Cache cache;
+    @Mock
+    Stats stats;
+    @Mock
+    Dispatcher dispatcher;
+    @Mock
+    Downloader downloader;
 
-  @Before public void setUp() throws Exception {
-    initMocks(this);
-    when(downloader.load(any(Uri.class), anyBoolean())).thenReturn(mock(Downloader.Response.class));
-  }
+    @Before
+    public void setUp() throws Exception {
+        initMocks(this);
+        when(downloader.load(any(Uri.class), anyBoolean())).thenReturn(mock(Downloader.Response.class));
+    }
 
-  @Test public void doesNotForceLocalCacheOnlyWithAirplaneModeOffAndRetryCount() throws Exception {
-    Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
-    NetworkBitmapHunter hunter =
-        new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
-    hunter.decode(action.getData());
-    verify(downloader).load(URI_1, false);
-  }
+    @Test
+    public void doesNotForceLocalCacheOnlyWithAirplaneModeOffAndRetryCount() throws Exception {
+        Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
+        NetworkBitmapHunter hunter =
+                new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
+        hunter.decode(action.getData());
+        verify(downloader).load(URI_1, false);
+    }
 
-  @Test public void withZeroRetryCountForcesLocalCacheOnly() throws Exception {
-    Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
-    NetworkBitmapHunter hunter =
-        new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
-    hunter.retryCount = 0;
-    hunter.decode(action.getData());
-    verify(downloader).load(URI_1, true);
-  }
+    @Test
+    public void withZeroRetryCountForcesLocalCacheOnly() throws Exception {
+        Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
+        NetworkBitmapHunter hunter =
+                new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
+        hunter.retryCount = 0;
+        hunter.decode(action.getData());
+        verify(downloader).load(URI_1, true);
+    }
 
-  @Test public void shouldRetryTwiceWithAirplaneModeOffAndNoNetworkInfo() throws Exception {
-    Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
-    NetworkBitmapHunter hunter =
-        new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
-    assertThat(hunter.shouldRetry(false, null)).isTrue();
-    assertThat(hunter.shouldRetry(false, null)).isTrue();
-    assertThat(hunter.shouldRetry(false, null)).isFalse();
-  }
+    @Test
+    public void shouldRetryTwiceWithAirplaneModeOffAndNoNetworkInfo() throws Exception {
+        Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
+        NetworkBitmapHunter hunter =
+                new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
+        assertThat(hunter.shouldRetry(false, null)).isTrue();
+        assertThat(hunter.shouldRetry(false, null)).isTrue();
+        assertThat(hunter.shouldRetry(false, null)).isFalse();
+    }
 
-  @Test public void shouldRetryWithUnknownNetworkInfo() throws Exception {
-    Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
-    NetworkBitmapHunter hunter =
-        new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
-    assertThat(hunter.shouldRetry(false, null)).isTrue();
-    assertThat(hunter.shouldRetry(true, null)).isTrue();
-  }
+    @Test
+    public void shouldRetryWithUnknownNetworkInfo() throws Exception {
+        Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
+        NetworkBitmapHunter hunter =
+                new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
+        assertThat(hunter.shouldRetry(false, null)).isTrue();
+        assertThat(hunter.shouldRetry(true, null)).isTrue();
+    }
 
-  @Test public void shouldRetryWithConnectedNetworkInfo() throws Exception {
-    Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
-    NetworkInfo info = mockNetworkInfo();
-    when(info.isConnectedOrConnecting()).thenReturn(true);
-    NetworkBitmapHunter hunter =
-        new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
-    assertThat(hunter.shouldRetry(false, info)).isTrue();
-    assertThat(hunter.shouldRetry(true, info)).isTrue();
-  }
+    @Test
+    public void shouldRetryWithConnectedNetworkInfo() throws Exception {
+        Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
+        NetworkInfo info = mockNetworkInfo();
+        when(info.isConnectedOrConnecting()).thenReturn(true);
+        NetworkBitmapHunter hunter =
+                new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
+        assertThat(hunter.shouldRetry(false, info)).isTrue();
+        assertThat(hunter.shouldRetry(true, info)).isTrue();
+    }
 
-  @Test public void shouldNotRetryWithDisconnectedNetworkInfo() throws Exception {
-    Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
-    NetworkInfo info = mockNetworkInfo();
-    when(info.isConnectedOrConnecting()).thenReturn(false);
-    NetworkBitmapHunter hunter =
-        new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
-    assertThat(hunter.shouldRetry(false, info)).isFalse();
-    assertThat(hunter.shouldRetry(true, info)).isFalse();
-  }
+    @Test
+    public void shouldNotRetryWithDisconnectedNetworkInfo() throws Exception {
+        Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
+        NetworkInfo info = mockNetworkInfo();
+        when(info.isConnectedOrConnecting()).thenReturn(false);
+        NetworkBitmapHunter hunter =
+                new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, downloader);
+        assertThat(hunter.shouldRetry(false, info)).isFalse();
+        assertThat(hunter.shouldRetry(true, info)).isFalse();
+    }
 
-  @Test public void downloaderCanReturnBitmapDirectly() throws Exception {
-    final Bitmap expected = Bitmap.createBitmap(10, 10, ARGB_8888);
-    Downloader bitmapDownloader = new Downloader() {
-      @Override public Response load(Uri uri, boolean localCacheOnly) throws IOException {
-        return new Response(expected, false);
-      }
-    };
-    Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
-    NetworkBitmapHunter hunter =
-        new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, bitmapDownloader);
+    @Test
+    public void downloaderCanReturnBitmapDirectly() throws Exception {
+        final Bitmap expected = Bitmap.createBitmap(10, 10, ARGB_8888);
+        Downloader bitmapDownloader = new Downloader() {
+            @Override
+            public Response load(Uri uri, boolean localCacheOnly) throws IOException {
+                return new Response(expected, false);
+            }
+        };
+        Action action = TestUtils.mockAction(URI_KEY_1, URI_1);
+        NetworkBitmapHunter hunter =
+                new NetworkBitmapHunter(picasso, dispatcher, cache, stats, action, bitmapDownloader);
 
-    Bitmap actual = hunter.decode(action.getData());
-    assertThat(actual).isSameAs(expected);
-  }
+        Bitmap actual = hunter.decode(action.getData());
+        assertThat(actual).isSameAs(expected);
+    }
 }

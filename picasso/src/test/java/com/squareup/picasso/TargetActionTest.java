@@ -34,50 +34,54 @@ import static org.mockito.Mockito.verify;
 @Config(manifest = Config.NONE)
 public class TargetActionTest {
 
-  @Test(expected = AssertionError.class)
-  public void throwsErrorWithNullResult() throws Exception {
-    TargetAction request =
-        new TargetAction(mock(Picasso.class), mockTarget(), null, false, URI_KEY_1);
-    request.complete(null, MEMORY);
-  }
-
-  @Test
-  public void invokesSuccessIfTargetIsNotNull() throws Exception {
-    Target target = mockTarget();
-    TargetAction request = new TargetAction(mock(Picasso.class), target, null, false, URI_KEY_1);
-    request.complete(BITMAP_1, MEMORY);
-    verify(target).onBitmapLoaded(BITMAP_1, MEMORY);
-  }
-
-  @Test
-  public void invokesErrorIfTargetIsNotNull() throws Exception {
-    Target target = mockTarget();
-    TargetAction request = new TargetAction(mock(Picasso.class), target, null, false, URI_KEY_1);
-    request.error();
-    verify(target).onBitmapFailed(null);
-  }
-
-  @Test public void recyclingInSuccessThrowsException() {
-    Target bad = new Target() {
-      @Override public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-        bitmap.recycle();
-      }
-
-      @Override public void onBitmapFailed(Drawable errorDrawable) {
-        throw new AssertionError();
-      }
-
-      @Override public void onPrepareLoad(Drawable placeHolderDrawable) {
-        throw new AssertionError();
-      }
-    };
-    Picasso picasso = mock(Picasso.class);
-
-    TargetAction tr = new TargetAction(picasso, bad, null, false, URI_KEY_1);
-    try {
-      tr.complete(BITMAP_1, MEMORY);
-      fail();
-    } catch (IllegalStateException expected) {
+    @Test(expected = AssertionError.class)
+    public void throwsErrorWithNullResult() throws Exception {
+        TargetAction request =
+                new TargetAction(mock(Picasso.class), mockTarget(), null, false, URI_KEY_1);
+        request.complete(null, MEMORY);
     }
-  }
+
+    @Test
+    public void invokesSuccessIfTargetIsNotNull() throws Exception {
+        Target target = mockTarget();
+        TargetAction request = new TargetAction(mock(Picasso.class), target, null, false, URI_KEY_1);
+        request.complete(BITMAP_1, MEMORY);
+        verify(target).onBitmapLoaded(BITMAP_1, MEMORY);
+    }
+
+    @Test
+    public void invokesErrorIfTargetIsNotNull() throws Exception {
+        Target target = mockTarget();
+        TargetAction request = new TargetAction(mock(Picasso.class), target, null, false, URI_KEY_1);
+        request.error();
+        verify(target).onBitmapFailed(null);
+    }
+
+    @Test
+    public void recyclingInSuccessThrowsException() {
+        Target bad = new Target() {
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                bitmap.recycle();
+            }
+
+            @Override
+            public void onBitmapFailed(Drawable errorDrawable) {
+                throw new AssertionError();
+            }
+
+            @Override
+            public void onPrepareLoad(Drawable placeHolderDrawable) {
+                throw new AssertionError();
+            }
+        };
+        Picasso picasso = mock(Picasso.class);
+
+        TargetAction tr = new TargetAction(picasso, bad, null, false, URI_KEY_1);
+        try {
+            tr.complete(BITMAP_1, MEMORY);
+            fail();
+        } catch (IllegalStateException expected) {
+        }
+    }
 }

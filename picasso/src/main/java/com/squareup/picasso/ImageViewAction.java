@@ -57,8 +57,7 @@ class ImageViewAction extends Action<ImageView> {
             System.out.println("Border (IVA): " + borderSize);
             if (borderSize > 0) {
                 PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, debugging, borderSize, borderColor);
-            }
-            else {
+            } else {
                 PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, debugging);
             }
         } else {

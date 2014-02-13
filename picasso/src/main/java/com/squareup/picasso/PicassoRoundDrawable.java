@@ -94,15 +94,14 @@ final class PicassoRoundDrawable extends Drawable {
         ovalShape.resize(size, size);
         ShapeDrawable shapeDrawable = new ShapeDrawable(ovalShape);
 
-	    int color;
-	    try {
-	        color = context.getResources().getColor(drawable.borderColor);
-	    }
-	    catch (Resources.NotFoundException e) {
-			color = R.color.white;
-	    }
+        int color;
+        try {
+            color = context.getResources().getColor(drawable.borderColor);
+        } catch (Resources.NotFoundException e) {
+            color = R.color.white;
+        }
 
-	    shapeDrawable.getPaint().setColor(context.getResources().getColor(color));
+        shapeDrawable.getPaint().setColor(context.getResources().getColor(color));
 
         stateListDrawable.addState(new int[]{android.R.attr.state_pressed}, shapeDrawable);
         stateListDrawable.addState(new int[]{android.R.attr.state_focused}, shapeDrawable);
