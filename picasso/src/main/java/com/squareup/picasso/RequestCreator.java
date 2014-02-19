@@ -39,6 +39,7 @@ public class RequestCreator {
 
     private boolean skipMemoryCache;
     private boolean noFade;
+    private boolean forceFade;
     private boolean deferred;
     private int placeholderResId;
     private int errorResId;
@@ -58,6 +59,7 @@ public class RequestCreator {
         this.useRoundDrawables = false;
         this.borderSize = -1;
         this.borderColor = -1;
+        this.forceFade = false;
     }
 
     @TestOnly
@@ -254,6 +256,14 @@ public class RequestCreator {
     }
 
     /**
+     * Forces brief fade in of every loaded image.
+     */
+    public RequestCreator forceFade() {
+        forceFade = true;
+        return this;
+    }
+
+    /**
      * Synchronously fulfill this request. Must not be called from the main thread.
      */
     public Bitmap get() throws IOException {
@@ -432,12 +442,12 @@ public class RequestCreator {
                 picasso.cancelRequest(target);
                 if (useRoundDrawables) {
                     if (borderSize > 0) {
-                        PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, picasso.debugging, borderSize, borderColor);
+                        PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.debugging, borderSize, borderColor);
                     } else {
-                        PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, picasso.debugging);
+                        PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.debugging);
                     }
                 } else {
-                    PicassoDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, picasso.debugging);
+                    PicassoDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.debugging);
                 }
                 if (callback != null) {
                     callback.onSuccess();
@@ -452,7 +462,7 @@ public class RequestCreator {
             PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
         }
         Action action =
-                new ImageViewAction(picasso, target, finalData, skipMemoryCache, noFade, errorResId,
+                new ImageViewAction(picasso, target, finalData, skipMemoryCache, noFade, forceFade, errorResId,
                         errorDrawable, requestKey, callback, useRoundDrawables, borderSize, borderColor);
 
         picasso.enqueueAndSubmit(action);

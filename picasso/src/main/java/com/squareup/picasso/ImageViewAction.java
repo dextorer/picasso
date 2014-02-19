@@ -27,15 +27,17 @@ class ImageViewAction extends Action<ImageView> {
     boolean round;
     int borderSize;
     int borderColor;
+    boolean forceFade;
 
     ImageViewAction(Picasso picasso, ImageView imageView, Request data, boolean skipCache,
-                    boolean noFade, int errorResId, Drawable errorDrawable, String key, Callback callback, boolean round,
+                    boolean noFade, boolean forceFade, int errorResId, Drawable errorDrawable, String key, Callback callback, boolean round,
                     int borderSize, int borderColor) {
         super(picasso, imageView, data, skipCache, noFade, errorResId, errorDrawable, key);
         this.callback = callback;
         this.round = round;
         this.borderSize = borderSize;
         this.borderColor = borderColor;
+        this.forceFade = forceFade;
     }
 
     @Override
@@ -54,14 +56,13 @@ class ImageViewAction extends Action<ImageView> {
         boolean debugging = picasso.debugging;
 
         if (round) {
-            System.out.println("Border (IVA): " + borderSize);
             if (borderSize > 0) {
-                PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, debugging, borderSize, borderColor);
+                PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, forceFade, debugging, borderSize, borderColor);
             } else {
-                PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, debugging);
+                PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, forceFade, debugging);
             }
         } else {
-            PicassoDrawable.setBitmap(target, context, result, from, noFade, debugging);
+            PicassoDrawable.setBitmap(target, context, result, from, noFade, forceFade, debugging);
         }
 
         if (callback != null) {

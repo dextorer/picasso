@@ -51,7 +51,7 @@ final class PicassoRoundDrawable extends Drawable {
      * image.
      */
     static PicassoRoundDrawable setBitmap(ImageView target, Context context, Bitmap bitmap,
-                                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging) {
+                                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging) {
         Drawable placeholder = target.getDrawable();
         if (placeholder instanceof AnimationDrawable) {
             ((AnimationDrawable) placeholder).stop();
@@ -60,7 +60,7 @@ final class PicassoRoundDrawable extends Drawable {
         int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
 
         PicassoRoundDrawable drawable =
-                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, debugging, target);
+                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, forceFade, debugging, target);
         target.setBackground(createStateListDrawable(context, minMeasure, drawable));
         target.setImageDrawable(drawable);
 
@@ -68,7 +68,7 @@ final class PicassoRoundDrawable extends Drawable {
     }
 
     static PicassoRoundDrawable setBitmap(ImageView target, Context context, Bitmap bitmap,
-                                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging, int borderSize, int borderColor) {
+                                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging, int borderSize, int borderColor) {
         Drawable placeholder = target.getDrawable();
         if (placeholder instanceof AnimationDrawable) {
             ((AnimationDrawable) placeholder).stop();
@@ -77,7 +77,7 @@ final class PicassoRoundDrawable extends Drawable {
         int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
 
         PicassoRoundDrawable drawable =
-                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, debugging, target);
+                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, forceFade, debugging, target);
 
         drawable.setBorder(borderSize, borderColor);
 
@@ -143,7 +143,7 @@ final class PicassoRoundDrawable extends Drawable {
     int alpha = 0xFF;
 
     PicassoRoundDrawable(Context context, Drawable placeholder, Bitmap bitmap,
-                         Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging, final ImageView target) {
+                         Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging, final ImageView target) {
         Resources res = context.getResources();
 
         this.debugging = debugging;
@@ -166,6 +166,9 @@ final class PicassoRoundDrawable extends Drawable {
         });
 
         boolean fade = loadedFrom != MEMORY && !noFade;
+        if (forceFade) {
+            fade = true;
+        }
         if (fade) {
             this.placeholder = placeholder;
             animating = true;
