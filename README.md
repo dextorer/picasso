@@ -1,3 +1,18 @@
+Why did I fork Picasso?
+-----------------------
+
+This is not just some random fork of Picasso. Inspired by Romain Guy's post (www.curious-creature.org/2012/12/11/android-recipe-1-image-with-rounded-corners/) about rounded corners for images, I tried to extend Picasso in order to support this particular functionality. I've added two simple methods to the constructor:
+
+    Picasso
+        .with(context)
+        .load(url)
+        .round()                    // the image gets rounded corners
+        .setBorder(15, Color.RED)   // the image gets a selection border, with the specified size/color
+        .fit()
+        .into(view);
+
+I will also add a method that will specify the corner radius.
+
 Picasso
 =======
 
