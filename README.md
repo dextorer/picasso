@@ -11,7 +11,7 @@ This is not just some random fork of Picasso. Inspired by Romain Guy's post (www
         .fit()
         .into(view);
 
-I will also add a method that will specify the corner radius.
+I will also add a method to specify the corner radius size.
 
 Picasso
 =======
