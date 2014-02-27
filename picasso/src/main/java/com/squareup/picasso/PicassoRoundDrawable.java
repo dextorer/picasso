@@ -16,11 +16,13 @@
 package com.squareup.picasso;
 
 import android.R;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.*;
 import android.graphics.drawable.*;
 import android.graphics.drawable.shapes.OvalShape;
+import android.graphics.drawable.shapes.RoundRectShape;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.ViewTreeObserver;
@@ -39,6 +41,7 @@ final class PicassoRoundDrawable extends Drawable {
     private final RectF mRect = new RectF();
     private BitmapShader mBitmapShader;
     private Paint mPaint;
+    private boolean mOverrideCornerRadius;
 
     private int targetWidth;
     private int targetHeight;
@@ -50,25 +53,9 @@ final class PicassoRoundDrawable extends Drawable {
      * Create or update the drawable on the target {@link android.widget.ImageView} to display the supplied bitmap
      * image.
      */
+    @SuppressLint("NewApi")
     static PicassoRoundDrawable setBitmap(ImageView target, Context context, Bitmap bitmap,
-                                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging) {
-        Drawable placeholder = target.getDrawable();
-        if (placeholder instanceof AnimationDrawable) {
-            ((AnimationDrawable) placeholder).stop();
-        }
-
-        int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
-
-        PicassoRoundDrawable drawable =
-                new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, forceFade, debugging, target);
-        target.setBackground(createStateListDrawable(context, minMeasure, drawable));
-        target.setImageDrawable(drawable);
-
-        return drawable;
-    }
-
-    static PicassoRoundDrawable setBitmap(ImageView target, Context context, Bitmap bitmap,
-                                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging, int borderSize, int borderColor) {
+                                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging, int borderSize, int borderColor, int cornerRadius) {
         Drawable placeholder = target.getDrawable();
         if (placeholder instanceof AnimationDrawable) {
             ((AnimationDrawable) placeholder).stop();
@@ -79,9 +66,21 @@ final class PicassoRoundDrawable extends Drawable {
         PicassoRoundDrawable drawable =
                 new PicassoRoundDrawable(context, placeholder, bitmap, loadedFrom, noFade, forceFade, debugging, target);
 
-        drawable.setBorder(borderSize, borderColor);
+        if (borderSize > 0) {
+            drawable.setBorder(borderSize, borderColor);
+        }
 
-        target.setBackground(createStateListDrawable(context, minMeasure, drawable));
+        if (cornerRadius > -1) {
+            drawable.mCornerRadius = cornerRadius;
+            drawable.mOverrideCornerRadius = true;
+        }
+
+        int sdk = android.os.Build.VERSION.SDK_INT;
+        if(sdk < android.os.Build.VERSION_CODES.JELLY_BEAN) {
+            target.setBackgroundDrawable(createStateListDrawable(context, minMeasure, drawable));
+        } else {
+            target.setBackground(createStateListDrawable(context, minMeasure, drawable));
+        }
         target.setImageDrawable(drawable);
 
         return drawable;
@@ -90,9 +89,16 @@ final class PicassoRoundDrawable extends Drawable {
     static StateListDrawable createStateListDrawable(Context context, int size, PicassoRoundDrawable drawable) {
         StateListDrawable stateListDrawable = new StateListDrawable();
 
-        OvalShape ovalShape = new OvalShape();
-        ovalShape.resize(size, size);
-        ShapeDrawable shapeDrawable = new ShapeDrawable(ovalShape);
+        ShapeDrawable shapeDrawable;
+        if (drawable.mOverrideCornerRadius) {
+            RoundRectShape roundRectShape = new RoundRectShape(new float [] {(int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius}, null, null);
+            shapeDrawable = new ShapeDrawable(roundRectShape);
+        }
+        else {
+            OvalShape ovalShape = new OvalShape();
+            ovalShape.resize(size, size);
+            shapeDrawable = new ShapeDrawable(ovalShape);
+        }
 
         int color;
         try {
@@ -142,6 +148,7 @@ final class PicassoRoundDrawable extends Drawable {
     boolean animating;
     int alpha = 0xFF;
 
+    @SuppressLint("NewApi")
     PicassoRoundDrawable(Context context, Drawable placeholder, Bitmap bitmap,
                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging, final ImageView target) {
         Resources res = context.getResources();
@@ -189,8 +196,10 @@ final class PicassoRoundDrawable extends Drawable {
     @Override
     public void draw(Canvas canvas) {
 
-        int minTargetMeasure = targetHeight > targetWidth ? targetWidth : targetHeight;
-        mCornerRadius = mCornerRadius > minTargetMeasure / 2 ? minTargetMeasure / 2 : mCornerRadius;
+        if (!mOverrideCornerRadius) {
+            int minTargetMeasure = targetHeight > targetWidth ? targetWidth : targetHeight;
+            mCornerRadius = mCornerRadius > minTargetMeasure / 2 ? minTargetMeasure / 2 : mCornerRadius;
+        }
 
         if (!animating) {
             canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);

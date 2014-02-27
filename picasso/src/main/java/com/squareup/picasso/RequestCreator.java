@@ -48,6 +48,7 @@ public class RequestCreator {
     private boolean useRoundDrawables;
     private int borderSize;
     private int borderColor;
+    private int roundCornerRadius;
 
     RequestCreator(Picasso picasso, Uri uri, int resourceId) {
         if (picasso.shutdown) {
@@ -133,6 +134,16 @@ public class RequestCreator {
      */
     public RequestCreator round() {
         this.useRoundDrawables = true;
+        this.roundCornerRadius = -1;
+        return this;
+    }
+
+    /**
+     * Causes all the Drawable objects to be rounded with the provided corner radius. *
+     */
+    public RequestCreator round(int cornerRadius) {
+        this.useRoundDrawables = true;
+        this.roundCornerRadius = cornerRadius;
         return this;
     }
 
@@ -441,11 +452,7 @@ public class RequestCreator {
             if (bitmap != null) {
                 picasso.cancelRequest(target);
                 if (useRoundDrawables) {
-                    if (borderSize > 0) {
-                        PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.debugging, borderSize, borderColor);
-                    } else {
-                        PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.debugging);
-                    }
+                    PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.debugging, borderSize, borderColor, roundCornerRadius);
                 } else {
                     PicassoDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.debugging);
                 }
@@ -463,7 +470,7 @@ public class RequestCreator {
         }
         Action action =
                 new ImageViewAction(picasso, target, finalData, skipMemoryCache, noFade, forceFade, errorResId,
-                        errorDrawable, requestKey, callback, useRoundDrawables, borderSize, borderColor);
+                        errorDrawable, requestKey, callback, useRoundDrawables, borderSize, borderColor, roundCornerRadius);
 
         picasso.enqueueAndSubmit(action);
     }

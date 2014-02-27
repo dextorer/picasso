@@ -27,17 +27,19 @@ class ImageViewAction extends Action<ImageView> {
     boolean round;
     int borderSize;
     int borderColor;
+    int cornerRadius;
     boolean forceFade;
 
     ImageViewAction(Picasso picasso, ImageView imageView, Request data, boolean skipCache,
                     boolean noFade, boolean forceFade, int errorResId, Drawable errorDrawable, String key, Callback callback, boolean round,
-                    int borderSize, int borderColor) {
+                    int borderSize, int borderColor, int cornerRadius) {
         super(picasso, imageView, data, skipCache, noFade, errorResId, errorDrawable, key);
         this.callback = callback;
         this.round = round;
         this.borderSize = borderSize;
         this.borderColor = borderColor;
         this.forceFade = forceFade;
+        this.cornerRadius = cornerRadius;
     }
 
     @Override
@@ -56,11 +58,7 @@ class ImageViewAction extends Action<ImageView> {
         boolean debugging = picasso.debugging;
 
         if (round) {
-            if (borderSize > 0) {
-                PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, forceFade, debugging, borderSize, borderColor);
-            } else {
-                PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, forceFade, debugging);
-            }
+            PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, forceFade, debugging, borderSize, borderColor, cornerRadius);
         } else {
             PicassoDrawable.setBitmap(target, context, result, from, noFade, forceFade, debugging);
         }
