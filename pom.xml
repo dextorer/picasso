@@ -71,7 +71,7 @@
       <dependency>
         <groupId>com.squareup.okhttp</groupId>
         <artifactId>okhttp</artifactId>
-        <version>1.3.0</version>
+        <version>1.5.4</version>
       </dependency>
 
       <dependency>
@@ -140,7 +140,7 @@
         <!-- This is needed because 'mvn site' does not work with Maven 3.0. -->
         <plugin>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.0</version>
+          <version>3.3</version>
         </plugin>
 
         <plugin>
