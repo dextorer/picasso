@@ -23,11 +23,20 @@ import android.widget.ImageView;
 class ImageViewAction extends Action<ImageView> {
 
   Callback callback;
+  boolean round;
+  int borderSize;
+  int borderColor;
+  boolean forceFade;
 
   ImageViewAction(Picasso picasso, ImageView imageView, Request data, boolean skipCache,
-      boolean noFade, int errorResId, Drawable errorDrawable, String key, Callback callback) {
+      boolean noFade, boolean forceFade, int errorResId, Drawable errorDrawable, String key, Callback callback,
+      boolean round, int borderSize, int borderColor) {
     super(picasso, imageView, data, skipCache, noFade, errorResId, errorDrawable, key);
     this.callback = callback;
+    this.round = round;
+    this.borderSize = borderSize;
+    this.borderColor = borderColor;
+    this.forceFade = forceFade;
   }
 
   @Override public void complete(Bitmap result, Picasso.LoadedFrom from) {
@@ -43,7 +52,11 @@ class ImageViewAction extends Action<ImageView> {
 
     Context context = picasso.context;
     boolean indicatorsEnabled = picasso.indicatorsEnabled;
-    PicassoDrawable.setBitmap(target, context, result, from, noFade, indicatorsEnabled);
+      if (round) {
+        PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, forceFade, indicatorsEnabled, borderSize, borderColor);
+      } else {
+        PicassoDrawable.setBitmap(target, context, result, from, noFade, forceFade, indicatorsEnabled);
+      }
 
     if (callback != null) {
       callback.onSuccess();

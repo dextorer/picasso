@@ -47,6 +47,12 @@ public class RequestCreator {
   private Drawable placeholderDrawable;
   private Drawable errorDrawable;
 
+  /** new parameters **/
+  private boolean useRoundDrawables;
+  private int borderSize;
+  private int borderColor;
+  private boolean forceFade;
+
   RequestCreator(Picasso picasso, Uri uri, int resourceId) {
     if (picasso.shutdown) {
       throw new IllegalStateException(
@@ -54,6 +60,10 @@ public class RequestCreator {
     }
     this.picasso = picasso;
     this.data = new Request.Builder(uri, resourceId);
+    this.useRoundDrawables = false;
+    this.borderSize = -1;
+    this.borderColor = -1;
+    this.forceFade = false;
   }
 
   @TestOnly RequestCreator() {
@@ -114,6 +124,24 @@ public class RequestCreator {
       throw new IllegalStateException("Error image already set.");
     }
     this.errorDrawable = errorDrawable;
+    return this;
+  }
+
+  /**
+   * Causes all the Drawable objects to be rounded. *
+   */
+  public RequestCreator round() {
+    this.useRoundDrawables = true;
+    return this;
+  }
+
+  /**
+   * Draws a border around all the Drawable objects. *
+   */
+  public RequestCreator setBorder(int borderSize, int borderColor) {
+    this.borderSize = borderSize;
+    this.borderColor = borderColor;
+
     return this;
   }
 
@@ -214,6 +242,14 @@ public class RequestCreator {
   /** Disable brief fade in of images loaded from the disk cache or network. */
   public RequestCreator noFade() {
     noFade = true;
+    return this;
+  }
+
+  /**
+   * Forces brief fade in of every loaded image.
+   */
+  public RequestCreator forceFade() {
+    forceFade = true;
     return this;
   }
 
@@ -426,7 +462,11 @@ public class RequestCreator {
 
     if (!data.hasImage()) {
       picasso.cancelRequest(target);
-      PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+      if (useRoundDrawables) {
+        PicassoRoundDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+      } else {
+        PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+      }
       return;
     }
 
@@ -437,7 +477,11 @@ public class RequestCreator {
       int measuredWidth = target.getMeasuredWidth();
       int measuredHeight = target.getMeasuredHeight();
       if (measuredWidth == 0 || measuredHeight == 0) {
-        PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+        if (useRoundDrawables) {
+          PicassoRoundDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+        } else {
+          PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+        }
         picasso.defer(target, new DeferredRequestCreator(this, target, callback));
         return;
       }
@@ -451,8 +495,11 @@ public class RequestCreator {
       Bitmap bitmap = picasso.quickMemoryCacheCheck(requestKey);
       if (bitmap != null) {
         picasso.cancelRequest(target);
-        PicassoDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade,
-            picasso.indicatorsEnabled);
+        if (useRoundDrawables) {
+          PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.indicatorsEnabled, borderSize, borderColor);
+        } else {
+          PicassoDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.indicatorsEnabled);
+        }
         if (callback != null) {
           callback.onSuccess();
         }
@@ -460,11 +507,15 @@ public class RequestCreator {
       }
     }
 
-    PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+    if (useRoundDrawables) {
+      PicassoRoundDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+    } else {
+      PicassoDrawable.setPlaceholder(target, placeholderResId, placeholderDrawable);
+    }
 
     Action action =
-        new ImageViewAction(picasso, target, finalData, skipMemoryCache, noFade, errorResId,
-            errorDrawable, requestKey, callback);
+        new ImageViewAction(picasso, target, finalData, skipMemoryCache, noFade, forceFade, errorResId,
+            errorDrawable, requestKey, callback, useRoundDrawables, borderSize, borderColor);
 
     picasso.enqueueAndSubmit(action);
   }

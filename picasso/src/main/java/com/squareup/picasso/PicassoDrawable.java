@@ -15,6 +15,7 @@
  */
 package com.squareup.picasso;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -35,20 +36,20 @@ import static com.squareup.picasso.Picasso.LoadedFrom.MEMORY;
 final class PicassoDrawable extends BitmapDrawable {
   // Only accessed from main thread.
   private static final Paint DEBUG_PAINT = new Paint();
-  private static final float FADE_DURATION = 200f; //ms
+  private static final float FADE_DURATION = 350f; //ms
 
   /**
    * Create or update the drawable on the target {@link ImageView} to display the supplied bitmap
    * image.
    */
   static void setBitmap(ImageView target, Context context, Bitmap bitmap,
-      Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging) {
+      Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging) {
     Drawable placeholder = target.getDrawable();
     if (placeholder instanceof AnimationDrawable) {
       ((AnimationDrawable) placeholder).stop();
     }
     PicassoDrawable drawable =
-        new PicassoDrawable(context, bitmap, placeholder, loadedFrom, noFade, debugging);
+        new PicassoDrawable(context, bitmap, placeholder, loadedFrom, noFade, forceFade, debugging);
     target.setImageDrawable(drawable);
   }
 
@@ -77,8 +78,9 @@ final class PicassoDrawable extends BitmapDrawable {
   boolean animating;
   int alpha = 0xFF;
 
+  @SuppressLint("NewApi")
   PicassoDrawable(Context context, Bitmap bitmap, Drawable placeholder,
-      Picasso.LoadedFrom loadedFrom, boolean noFade, boolean debugging) {
+      Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFace, boolean debugging) {
     super(context.getResources(), bitmap);
 
     this.debugging = debugging;
@@ -87,6 +89,9 @@ final class PicassoDrawable extends BitmapDrawable {
     this.loadedFrom = loadedFrom;
 
     boolean fade = loadedFrom != MEMORY && !noFade;
+    if (forceFace) {
+      fade = true;
+    }
     if (fade) {
       this.placeholder = placeholder;
       animating = true;
