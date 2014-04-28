@@ -47,7 +47,9 @@ final class SampleGridViewAdapter extends BaseAdapter {
                 .placeholder(R.drawable.placeholder) //
                 .error(R.drawable.error) //
                 .round() //
-                //.setBorder(15, Color.RED) //
+                .setBorder(15, Color.RED) //
+                //.skipMemoryCache()
+                //.transform(new CircleTransformation())
                 .fit() //
                 .into(view);
 

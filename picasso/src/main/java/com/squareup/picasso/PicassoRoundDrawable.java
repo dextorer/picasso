@@ -36,10 +36,8 @@ final class PicassoRoundDrawable extends BitmapDrawable {
   private static final float FADE_DURATION = 200f; //ms
 
   private float mCornerRadius;
-  private final RectF mRect = new RectF();
   private BitmapShader mBitmapShader;
   private Paint mPaint;
-  private boolean mOverrideCornerRadius = false;
 
   private int targetWidth;
   private int targetHeight;
@@ -56,7 +54,7 @@ final class PicassoRoundDrawable extends BitmapDrawable {
       Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging,
       int borderSize, int borderColor) {
 
-    int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
+    int minMeasure = Math.min(bitmap.getHeight(), bitmap.getWidth());
 
     Drawable placeholder = target.getDrawable();
     if (placeholder instanceof AnimationDrawable) {
@@ -67,12 +65,6 @@ final class PicassoRoundDrawable extends BitmapDrawable {
 
     if (borderSize > 0) {
       drawable.setBorder(borderSize, borderColor);
-    }
-
-    int cornerRadius = 0; //TODO allow passing from RequestCreator
-    if (cornerRadius > -1) {
-      drawable.mCornerRadius = cornerRadius;
-      drawable.mOverrideCornerRadius = true;
     }
 
     int sdk = android.os.Build.VERSION.SDK_INT;
@@ -89,24 +81,16 @@ final class PicassoRoundDrawable extends BitmapDrawable {
     StateListDrawable stateListDrawable = new StateListDrawable();
     ShapeDrawable shapeDrawable;
 
-    if (drawable.mOverrideCornerRadius) {
-      RoundRectShape roundRectShape = new RoundRectShape(new float [] {(int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius, (int) drawable.mCornerRadius}, null, null);
-      shapeDrawable = new ShapeDrawable(roundRectShape);
-    }
-    else {
-      OvalShape ovalShape = new OvalShape();
-      ovalShape.resize(size, size);
-      shapeDrawable = new ShapeDrawable(ovalShape);
-    }
+    OvalShape ovalShape = new OvalShape();
+    ovalShape.resize(size, size);
+    shapeDrawable = new ShapeDrawable(ovalShape);
 
-    /*int color;
     try {
-      color = context.getResources().getColor(drawable.borderColor);
+      int color = context.getResources().getColor(drawable.borderColor);
+      shapeDrawable.getPaint().setColor(context.getResources().getColor(color));
     } catch (Resources.NotFoundException e) {
-      color = android.R.color.white;
+      shapeDrawable.getPaint().setColor(drawable.borderColor);
     }
-
-    shapeDrawable.getPaint().setColor(context.getResources().getColor(color));*/
 
     stateListDrawable.addState(new int[]{android.R.attr.state_pressed}, shapeDrawable);
     stateListDrawable.addState(new int[]{android.R.attr.state_focused}, shapeDrawable);
@@ -167,6 +151,11 @@ final class PicassoRoundDrawable extends BitmapDrawable {
       }
     });*/
 
+    targetWidth = bitmap.getWidth();
+    targetHeight = bitmap.getHeight();
+
+    this.placeholder = placeholder;
+
     boolean fade = loadedFrom != MEMORY && !noFade;
 
     if (forceFade) {
@@ -177,14 +166,6 @@ final class PicassoRoundDrawable extends BitmapDrawable {
       animating = true;
       startTimeMillis = SystemClock.uptimeMillis();
     }
-
-    int minMeasure = bitmap.getHeight() > bitmap.getWidth() ? bitmap.getWidth() : bitmap.getHeight();
-    Log.d("DEBUG", "BitmapHeight: " + bitmap.getHeight());
-    Log.d("DEBUG", "BitmapWidth: " + bitmap.getWidth());
-    mCornerRadius = minMeasure / 2;
-
-    final float density = context.getResources().getDisplayMetrics().density;
-    mCornerRadius = (int) (mCornerRadius * density + 0.5f);
 
     mBitmapShader = new BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
 
@@ -200,77 +181,39 @@ final class PicassoRoundDrawable extends BitmapDrawable {
       mCornerRadius = mCornerRadius > minTargetMeasure / 2 ? minTargetMeasure / 2 : mCornerRadius;
     }*/
 
-    int minMeasure = getIntrinsicHeight() > getIntrinsicWidth() ? getIntrinsicWidth() : getIntrinsicHeight();
-    Log.d("DEBUG", "BitmapHeight: " + getIntrinsicHeight());
-    Log.d("DEBUG", "BitmapWidth: " + getIntrinsicWidth());
-    mCornerRadius = minMeasure / 2;
-    Log.d("DEBUG", "CornerRadius: " + mCornerRadius);
-
-
-//    mRect.set(0.0f, 0.0f, targetWidth, targetHeight);
-    //canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
+    float minMeasure = Math.min(targetHeight, targetWidth);
+    //float minMeasure = Math.min(getIntrinsicHeight(), getIntrinsicWidth());
+    //Log.d("DEBUG", "TargetHeight: " + targetHeight + " - IntrinsicHeight: " + getIntrinsicHeight());
+    //Log.d("DEBUG", "TargetWidth: " + targetWidth + " - IntrinsicWidth: " + getIntrinsicWidth());
+    mCornerRadius = minMeasure / 2f;
+    //Log.d("DEBUG", "CornerRadius: " + mCornerRadius);
+    //mCornerRadius = mCornerRadius * density + 0.5f;
+    //Log.d("DEBUG", "CornerRadius: " + mCornerRadius + " - Density: " + density);
 
     if (!animating) {
-        canvas.drawColor(Color.BLACK);
-        canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
+      canvas.drawCircle(mCornerRadius, mCornerRadius, mCornerRadius - borderSize, mPaint);
     } else {
       float normalized = (SystemClock.uptimeMillis() - startTimeMillis) / FADE_DURATION;
       if (normalized >= 1f) {
         animating = false;
         placeholder = null;
-        canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
+        canvas.drawCircle(mCornerRadius, mCornerRadius, mCornerRadius - borderSize, mPaint);
       } else {
         if (placeholder != null) {
           placeholder.draw(canvas);
         }
         int partialAlpha = (int) (alpha * normalized);
         mPaint.setAlpha(partialAlpha);
-        canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
+        canvas.drawCircle(mCornerRadius, mCornerRadius, mCornerRadius - borderSize, mPaint);
         mPaint.setAlpha(alpha);
         invalidateSelf();
       }
     }
 
-    /*if (!animating) {
-      super.draw(canvas);
-    } else {
-      float normalized = (SystemClock.uptimeMillis() - startTimeMillis) / FADE_DURATION;
-      if (normalized >= 1f) {
-        animating = false;
-        placeholder = null;
-        super.draw(canvas);
-      } else {
-        if (placeholder != null) {
-          placeholder.draw(canvas);
-        }
-
-        int partialAlpha = (int) (alpha * normalized);
-        setAlpha(partialAlpha);
-        super.draw(canvas);
-        setAlpha(alpha);
-      }
-    }*/
-
     if (debugging) {
       drawDebugIndicator(canvas);
     }
   }
-
-  /*@Override
-  public int getIntrinsicWidth() {
-    if (placeholder != null) {
-      return placeholder.getIntrinsicWidth();
-    }
-    return super.getIntrinsicWidth();
-  }
-
-  @Override
-  public int getIntrinsicHeight() {
-    if (placeholder != null) {
-      return placeholder.getIntrinsicHeight();
-    }
-    return super.getIntrinsicHeight();
-  }*/
 
   @Override public void setAlpha(int alpha) {
     if (placeholder != null) {
@@ -290,15 +233,10 @@ final class PicassoRoundDrawable extends BitmapDrawable {
     if (placeholder != null) {
       placeholder.setBounds(bounds);
     }
-    super.onBoundsChange(bounds);
 
-    if (mRect != null) {
-      if (borderSize > 0) {
-        mRect.set(borderSize, borderSize, bounds.width() - borderSize, bounds.height() - borderSize);
-      } else {
-        mRect.set(0.0f, 0.0f, bounds.width(), bounds.height());
-      }
-    }
+    Log.d("DEBUG", "BoundsChanged -- w: " + bounds.width() + " - h: " + bounds.height());
+
+    super.onBoundsChange(bounds);
   }
 
   private void drawDebugIndicator(Canvas canvas) {
