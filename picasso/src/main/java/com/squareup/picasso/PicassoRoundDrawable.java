@@ -36,6 +36,7 @@ final class PicassoRoundDrawable extends BitmapDrawable {
   private static final float FADE_DURATION = 200f; //ms
 
   private float mCornerRadius;
+  private final RectF mRect = new RectF();
   private BitmapShader mBitmapShader;
   private Paint mPaint;
 
@@ -45,6 +46,8 @@ final class PicassoRoundDrawable extends BitmapDrawable {
   private int borderSize;
   private int borderColor;
 
+  private int roundSize;
+
   /**
    * Create or update the drawable on the target {@link android.widget.ImageView} to display the supplied bitmap
    * image.
@@ -52,7 +55,7 @@ final class PicassoRoundDrawable extends BitmapDrawable {
   @SuppressLint("NewApi")
   static void setBitmap(ImageView target, Context context, Bitmap bitmap,
       Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging,
-      int borderSize, int borderColor) {
+      int borderSize, int borderColor, int roundSize) {
 
     int minMeasure = Math.min(bitmap.getHeight(), bitmap.getWidth());
 
@@ -67,6 +70,10 @@ final class PicassoRoundDrawable extends BitmapDrawable {
       drawable.setBorder(borderSize, borderColor);
     }
 
+    if (roundSize > 0) {
+      drawable.setRoundSize(roundSize);
+    }
+
     int sdk = android.os.Build.VERSION.SDK_INT;
     if(sdk < android.os.Build.VERSION_CODES.JELLY_BEAN) {
       target.setBackgroundDrawable(createStateListDrawable(context, minMeasure, drawable));
@@ -79,11 +86,16 @@ final class PicassoRoundDrawable extends BitmapDrawable {
 
   static StateListDrawable createStateListDrawable(Context context, int size, PicassoRoundDrawable drawable) {
     StateListDrawable stateListDrawable = new StateListDrawable();
-    ShapeDrawable shapeDrawable;
 
-    OvalShape ovalShape = new OvalShape();
-    ovalShape.resize(size, size);
-    shapeDrawable = new ShapeDrawable(ovalShape);
+    ShapeDrawable shapeDrawable;
+    if (drawable.roundSize > 0) {
+      RoundRectShape roundRectShape = new RoundRectShape(new float[] {(int) size, (int) size, (int) size, (int) size, (int) size, (int) size, (int) size, (int) size}, null, null);
+      shapeDrawable = new ShapeDrawable(roundRectShape);
+    } else {
+      OvalShape ovalShape = new OvalShape();
+      ovalShape.resize(size, size);
+      shapeDrawable = new ShapeDrawable(ovalShape);
+    }
 
     try {
       int color = context.getResources().getColor(drawable.borderColor);
@@ -119,6 +131,10 @@ final class PicassoRoundDrawable extends BitmapDrawable {
     this.borderColor = borderColor;
   }
 
+  public void setRoundSize(int roundSize) {
+    this.roundSize = roundSize;
+  }
+
   private final boolean debugging;
   private final float density;
   private final Picasso.LoadedFrom loadedFrom;
@@ -138,18 +154,6 @@ final class PicassoRoundDrawable extends BitmapDrawable {
     this.density = context.getResources().getDisplayMetrics().density;
 
     this.loadedFrom = loadedFrom;
-
-    /*target.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-      @Override
-      public boolean onPreDraw() {
-        targetHeight = target.getMeasuredHeight();
-        targetWidth = target.getMeasuredWidth();
-
-        target.getViewTreeObserver().removeOnPreDrawListener(this);
-
-        return true;
-      }
-    });*/
 
     targetWidth = bitmap.getWidth();
     targetHeight = bitmap.getHeight();
@@ -176,35 +180,36 @@ final class PicassoRoundDrawable extends BitmapDrawable {
 
   @Override public void draw(Canvas canvas) {
 
-    /*if (!mOverrideCornerRadius) {
-      int minTargetMeasure = targetHeight > targetWidth ? targetWidth : targetHeight;
-      mCornerRadius = mCornerRadius > minTargetMeasure / 2 ? minTargetMeasure / 2 : mCornerRadius;
-    }*/
-
     float minMeasure = Math.min(targetHeight, targetWidth);
-    //float minMeasure = Math.min(getIntrinsicHeight(), getIntrinsicWidth());
-    //Log.d("DEBUG", "TargetHeight: " + targetHeight + " - IntrinsicHeight: " + getIntrinsicHeight());
-    //Log.d("DEBUG", "TargetWidth: " + targetWidth + " - IntrinsicWidth: " + getIntrinsicWidth());
     mCornerRadius = minMeasure / 2f;
-    //Log.d("DEBUG", "CornerRadius: " + mCornerRadius);
-    //mCornerRadius = mCornerRadius * density + 0.5f;
-    //Log.d("DEBUG", "CornerRadius: " + mCornerRadius + " - Density: " + density);
 
     if (!animating) {
-      canvas.drawCircle(mCornerRadius, mCornerRadius, mCornerRadius - borderSize, mPaint);
+      if (roundSize > 0) {
+        canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
+      } else {
+        canvas.drawCircle(mCornerRadius, mCornerRadius, mCornerRadius - borderSize, mPaint);
+      }
     } else {
       float normalized = (SystemClock.uptimeMillis() - startTimeMillis) / FADE_DURATION;
       if (normalized >= 1f) {
         animating = false;
         placeholder = null;
-        canvas.drawCircle(mCornerRadius, mCornerRadius, mCornerRadius - borderSize, mPaint);
+        if (roundSize > 0) {
+          canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
+        } else {
+          canvas.drawCircle(mCornerRadius, mCornerRadius, mCornerRadius - borderSize, mPaint);
+        }
       } else {
         if (placeholder != null) {
           placeholder.draw(canvas);
         }
         int partialAlpha = (int) (alpha * normalized);
         mPaint.setAlpha(partialAlpha);
-        canvas.drawCircle(mCornerRadius, mCornerRadius, mCornerRadius - borderSize, mPaint);
+        if (roundSize > 0) {
+          canvas.drawRoundRect(mRect, mCornerRadius, mCornerRadius, mPaint);
+        } else {
+          canvas.drawCircle(mCornerRadius, mCornerRadius, mCornerRadius - borderSize, mPaint);
+        }
         mPaint.setAlpha(alpha);
         invalidateSelf();
       }
@@ -233,8 +238,7 @@ final class PicassoRoundDrawable extends BitmapDrawable {
     if (placeholder != null) {
       placeholder.setBounds(bounds);
     }
-
-    Log.d("DEBUG", "BoundsChanged -- w: " + bounds.width() + " - h: " + bounds.height());
+    mRect.set(borderSize, borderSize, bounds.width() - borderSize, bounds.height() - borderSize);
 
     super.onBoundsChange(bounds);
   }

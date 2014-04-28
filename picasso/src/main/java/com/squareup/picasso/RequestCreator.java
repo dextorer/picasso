@@ -49,6 +49,7 @@ public class RequestCreator {
 
   /** new parameters **/
   private boolean useRoundDrawables;
+  private int roundSize;
   private int borderSize;
   private int borderColor;
   private boolean forceFade;
@@ -63,6 +64,7 @@ public class RequestCreator {
     this.useRoundDrawables = false;
     this.borderSize = -1;
     this.borderColor = -1;
+    this.roundSize = -1;
     this.forceFade = false;
   }
 
@@ -128,10 +130,19 @@ public class RequestCreator {
   }
 
   /**
-   * Causes all the Drawable objects to be rounded. *
+   * Causes all the Drawable objects to have an oval shape. *
    */
   public RequestCreator round() {
     this.useRoundDrawables = true;
+    return this;
+  }
+
+  /**
+   * Causes all the Drawable objects to be rounded. *
+   */
+  public RequestCreator round(int roundSize) {
+    this.useRoundDrawables = true;
+    this.roundSize = roundSize;
     return this;
   }
 
@@ -496,7 +507,7 @@ public class RequestCreator {
       if (bitmap != null) {
         picasso.cancelRequest(target);
         if (useRoundDrawables) {
-          PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.indicatorsEnabled, borderSize, borderColor);
+          PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.indicatorsEnabled, borderSize, borderColor, roundSize);
         } else {
           PicassoDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.indicatorsEnabled);
         }
@@ -515,7 +526,7 @@ public class RequestCreator {
 
     Action action =
         new ImageViewAction(picasso, target, finalData, skipMemoryCache, noFade, forceFade, errorResId,
-            errorDrawable, requestKey, callback, useRoundDrawables, borderSize, borderColor);
+            errorDrawable, requestKey, callback, useRoundDrawables, borderSize, borderColor, roundSize);
 
     picasso.enqueueAndSubmit(action);
   }
