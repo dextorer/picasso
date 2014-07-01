@@ -40,100 +40,100 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @Config(manifest = Config.NONE)
 public class ImageViewActionTest {
 
-    @Test(expected = AssertionError.class)
-    public void throwsErrorWithNullResult() throws Exception {
-        ImageViewAction action =
-                new ImageViewAction(mock(Picasso.class), mockImageViewTarget(), null, false, false, 0, null,
-                        URI_KEY_1, null);
-        action.complete(null, MEMORY);
-    }
+  @Test(expected = AssertionError.class)
+  public void throwsErrorWithNullResult() throws Exception {
+    ImageViewAction action =
+        new ImageViewAction(mock(Picasso.class), mockImageViewTarget(), null, false, false, 0, null,
+            URI_KEY_1, null);
+    action.complete(null, MEMORY);
+  }
 
-    @Test
-    public void returnsIfTargetIsNullOnComplete() throws Exception {
-        Picasso picasso = mock(Picasso.class);
-        ImageView target = mockImageViewTarget();
-        Callback callback = mockCallback();
-        ImageViewAction request =
-                new ImageViewAction(picasso, target, null, false, false, 0, null, URI_KEY_1, callback);
-        request.target.clear();
-        request.complete(BITMAP_1, MEMORY);
-        verifyZeroInteractions(target);
-        verifyZeroInteractions(callback);
-    }
+  @Test
+  public void returnsIfTargetIsNullOnComplete() throws Exception {
+    Picasso picasso = mock(Picasso.class);
+    ImageView target = mockImageViewTarget();
+    Callback callback = mockCallback();
+    ImageViewAction request =
+        new ImageViewAction(picasso, target, null, false, false, 0, null, URI_KEY_1, callback);
+    request.target.clear();
+    request.complete(BITMAP_1, MEMORY);
+    verifyZeroInteractions(target);
+    verifyZeroInteractions(callback);
+  }
 
-    @Test
-    public void returnsIfTargetIsNullOnError() throws Exception {
-        Picasso picasso = mock(Picasso.class);
-        ImageView target = mockImageViewTarget();
-        Callback callback = mockCallback();
-        ImageViewAction request =
-                new ImageViewAction(picasso, target, null, false, false, 0, null, URI_KEY_1, callback);
-        request.target.clear();
-        request.error();
-        verifyZeroInteractions(target);
-        verifyZeroInteractions(callback);
-    }
+  @Test
+  public void returnsIfTargetIsNullOnError() throws Exception {
+    Picasso picasso = mock(Picasso.class);
+    ImageView target = mockImageViewTarget();
+    Callback callback = mockCallback();
+    ImageViewAction request =
+        new ImageViewAction(picasso, target, null, false, false, 0, null, URI_KEY_1, callback);
+    request.target.clear();
+    request.error();
+    verifyZeroInteractions(target);
+    verifyZeroInteractions(callback);
+  }
 
-    @Test
-    public void invokesTargetAndCallbackSuccessIfTargetIsNotNull() throws Exception {
-        Picasso picasso =
-                new Picasso(Robolectric.application, mock(Dispatcher.class), Cache.NONE, null, IDENTITY,
-                        mock(Stats.class), true);
-        ImageView target = mockImageViewTarget();
-        Callback callback = mockCallback();
-        ImageViewAction request =
-                new ImageViewAction(picasso, target, null, false, false, 0, null, URI_KEY_1, callback);
-        request.complete(BITMAP_1, MEMORY);
-        verify(target).setImageDrawable(any(PicassoDrawable.class));
-        verify(callback).onSuccess();
-    }
+  @Test
+  public void invokesTargetAndCallbackSuccessIfTargetIsNotNull() throws Exception {
+    Picasso picasso =
+        new Picasso(Robolectric.application, mock(Dispatcher.class), Cache.NONE, null, IDENTITY,
+            mock(Stats.class), false, false);
+    ImageView target = mockImageViewTarget();
+    Callback callback = mockCallback();
+    ImageViewAction request =
+        new ImageViewAction(picasso, target, null, false, false, 0, null, URI_KEY_1, callback);
+    request.complete(BITMAP_1, MEMORY);
+    verify(target).setImageDrawable(any(PicassoDrawable.class));
+    verify(callback).onSuccess();
+  }
 
-    @Test
-    public void invokesTargetAndCallbackErrorIfTargetIsNotNullWithErrorResourceId() throws Exception {
-        ImageView target = mockImageViewTarget();
-        Callback callback = mockCallback();
-        Picasso mock = mock(Picasso.class);
-        ImageViewAction request =
-                new ImageViewAction(mock, target, null, false, false, RESOURCE_ID_1, null, null, callback);
-        request.error();
-        verify(target).setImageResource(RESOURCE_ID_1);
-        verify(callback).onError();
-    }
+  @Test
+  public void invokesTargetAndCallbackErrorIfTargetIsNotNullWithErrorResourceId() throws Exception {
+    ImageView target = mockImageViewTarget();
+    Callback callback = mockCallback();
+    Picasso mock = mock(Picasso.class);
+    ImageViewAction request =
+        new ImageViewAction(mock, target, null, false, false, RESOURCE_ID_1, null, null, callback);
+    request.error();
+    verify(target).setImageResource(RESOURCE_ID_1);
+    verify(callback).onError();
+  }
 
-    @Test
-    public void invokesErrorIfTargetIsNotNullWithErrorResourceId() throws Exception {
-        ImageView target = mockImageViewTarget();
-        Callback callback = mockCallback();
-        Picasso mock = mock(Picasso.class);
-        ImageViewAction request =
-                new ImageViewAction(mock, target, null, false, false, RESOURCE_ID_1, null, null, callback);
-        request.error();
-        verify(target).setImageResource(RESOURCE_ID_1);
-        verify(callback).onError();
-    }
+  @Test
+  public void invokesErrorIfTargetIsNotNullWithErrorResourceId() throws Exception {
+    ImageView target = mockImageViewTarget();
+    Callback callback = mockCallback();
+    Picasso mock = mock(Picasso.class);
+    ImageViewAction request =
+        new ImageViewAction(mock, target, null, false, false, RESOURCE_ID_1, null, null, callback);
+    request.error();
+    verify(target).setImageResource(RESOURCE_ID_1);
+    verify(callback).onError();
+  }
 
-    @Test
-    public void invokesErrorIfTargetIsNotNullWithErrorDrawable() throws Exception {
-        Drawable errorDrawable = mock(Drawable.class);
-        ImageView target = mockImageViewTarget();
-        Callback callback = mockCallback();
-        Picasso mock = mock(Picasso.class);
-        ImageViewAction request =
-                new ImageViewAction(mock, target, null, false, false, 0, errorDrawable, URI_KEY_1,
-                        callback);
-        request.error();
-        verify(target).setImageDrawable(errorDrawable);
-        verify(callback).onError();
-    }
+  @Test
+  public void invokesErrorIfTargetIsNotNullWithErrorDrawable() throws Exception {
+    Drawable errorDrawable = mock(Drawable.class);
+    ImageView target = mockImageViewTarget();
+    Callback callback = mockCallback();
+    Picasso mock = mock(Picasso.class);
+    ImageViewAction request =
+        new ImageViewAction(mock, target, null, false, false, 0, errorDrawable, URI_KEY_1,
+            callback);
+    request.error();
+    verify(target).setImageDrawable(errorDrawable);
+    verify(callback).onError();
+  }
 
-    @Test
-    public void clearsCallbackOnCancel() throws Exception {
-        Picasso picasso = mock(Picasso.class);
-        ImageView target = mockImageViewTarget();
-        Callback callback = mockCallback();
-        ImageViewAction request =
-                new ImageViewAction(picasso, target, null, false, false, 0, null, URI_KEY_1, callback);
-        request.cancel();
-        assertThat(request.callback).isNull();
-    }
+  @Test
+  public void clearsCallbackOnCancel() throws Exception {
+    Picasso picasso = mock(Picasso.class);
+    ImageView target = mockImageViewTarget();
+    Callback callback = mockCallback();
+    ImageViewAction request =
+        new ImageViewAction(picasso, target, null, false, false, 0, null, URI_KEY_1, callback);
+    request.cancel();
+    assertThat(request.callback).isNull();
+  }
 }

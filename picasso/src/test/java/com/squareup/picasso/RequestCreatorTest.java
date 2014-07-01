@@ -207,7 +207,7 @@ public class RequestCreatorTest {
   public void intoImageViewWithQuickMemoryCacheCheckDoesNotSubmit() throws Exception {
     Picasso picasso =
         spy(new Picasso(Robolectric.application, mock(Dispatcher.class), Cache.NONE, null, IDENTITY,
-            mock(Stats.class), true));
+            mock(Stats.class), false, false));
     doReturn(BITMAP_1).when(picasso).quickMemoryCacheCheck(URI_KEY_1);
     ImageView target = mockImageViewTarget();
     Callback callback = mockCallback();
@@ -222,7 +222,7 @@ public class RequestCreatorTest {
   public void intoImageViewSetsPlaceholderDrawable() throws Exception {
     Picasso picasso =
         spy(new Picasso(Robolectric.application, mock(Dispatcher.class), Cache.NONE, null, IDENTITY,
-            mock(Stats.class), true));
+            mock(Stats.class), false, false));
     ImageView target = mockImageViewTarget();
     Drawable placeHolderDrawable = mock(Drawable.class);
     new RequestCreator(picasso, URI_1, 0).placeholder(placeHolderDrawable).into(target);
@@ -235,7 +235,7 @@ public class RequestCreatorTest {
   public void intoImageViewSetsPlaceholderWithResourceId() throws Exception {
     Picasso picasso =
         spy(new Picasso(Robolectric.application, mock(Dispatcher.class), Cache.NONE, null, IDENTITY,
-            mock(Stats.class), true));
+            mock(Stats.class), false, false));
     ImageView target = mockImageViewTarget();
     new RequestCreator(picasso, URI_1, 0).placeholder(R.drawable.picture_frame).into(target);
     verify(target).setImageResource(R.drawable.picture_frame);
@@ -300,8 +300,8 @@ public class RequestCreatorTest {
   @Test
   public void intoImageViewWithFitAndDimensionsQueuesImageViewRequest() throws Exception {
     ImageView target = mockFitImageViewTarget(true);
-    when(target.getMeasuredWidth()).thenReturn(100);
-    when(target.getMeasuredHeight()).thenReturn(100);
+    when(target.getWidth()).thenReturn(100);
+    when(target.getHeight()).thenReturn(100);
     new RequestCreator(picasso, URI_1, 0).fit().into(target);
     verify(picasso).enqueueAndSubmit(actionCaptor.capture());
     assertThat(actionCaptor.getValue()).isInstanceOf(ImageViewAction.class);
