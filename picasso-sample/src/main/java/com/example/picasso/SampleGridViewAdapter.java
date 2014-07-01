@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -32,10 +33,15 @@ final class SampleGridViewAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        SquaredImageView view = (SquaredImageView) convertView;
+        /*SquaredImageView view = (SquaredImageView) convertView;
         if (view == null) {
             view = new SquaredImageView(context);
             view.setScaleType(CENTER_CROP);
+        }*/
+
+        ImageView view = (ImageView) convertView;
+        if (view == null) {
+            view = new ImageView(context);
         }
 
         // Get the image URL for the current position.
@@ -47,7 +53,9 @@ final class SampleGridViewAdapter extends BaseAdapter {
                 .placeholder(R.drawable.placeholder) //
                 .error(R.drawable.error) //
                 .round() //
-                .setBorder(15, Color.RED)
+                //.setBorder(15, Color.RED) //
+                //.skipMemoryCache()
+                //.transform(new CircleTransformation())
                 .fit() //
                 .into(view);
 

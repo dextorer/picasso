@@ -17,81 +17,74 @@ package com.squareup.picasso;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
 
 class ImageViewAction extends Action<ImageView> {
 
-    Callback callback;
-    boolean round;
-    int borderSize;
-    int borderColor;
-    boolean forceFade;
+  Callback callback;
+  boolean round;
+  int borderSize;
+  int borderColor;
+  int roundSize;
+  boolean forceFade;
 
-    ImageViewAction(Picasso picasso, ImageView imageView, Request data, boolean skipCache,
-                    boolean noFade, boolean forceFade, int errorResId, Drawable errorDrawable, String key, Callback callback, boolean round,
-                    int borderSize, int borderColor) {
-        super(picasso, imageView, data, skipCache, noFade, errorResId, errorDrawable, key);
-        this.callback = callback;
-        this.round = round;
-        this.borderSize = borderSize;
-        this.borderColor = borderColor;
-        this.forceFade = forceFade;
+  ImageViewAction(Picasso picasso, ImageView imageView, Request data, boolean skipCache,
+      boolean noFade, boolean forceFade, int errorResId, Drawable errorDrawable, String key, Callback callback,
+      boolean round, int borderSize, int borderColor, int roundSize) {
+    super(picasso, imageView, data, skipCache, noFade, errorResId, errorDrawable, key);
+    this.callback = callback;
+    this.round = round;
+    this.borderSize = borderSize;
+    this.borderColor = borderColor;
+    this.roundSize = roundSize;
+    this.forceFade = forceFade;
+  }
+
+  @Override public void complete(Bitmap result, Picasso.LoadedFrom from) {
+    if (result == null) {
+      throw new AssertionError(
+          String.format("Attempted to complete action with no result!\n%s", this));
     }
 
-    @Override
-    public void complete(Bitmap result, Picasso.LoadedFrom from) {
-        if (result == null) {
-            throw new AssertionError(
-                    String.format("Attempted to complete action with no result!\n%s", this));
-        }
-
-        ImageView target = this.target.get();
-        if (target == null) {
-            return;
-        }
-
-        Context context = picasso.context;
-        boolean debugging = picasso.debugging;
-
-        if (round) {
-            if (borderSize > 0) {
-                PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, forceFade, debugging, borderSize, borderColor);
-            } else {
-                PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, forceFade, debugging);
-            }
-        } else {
-            PicassoDrawable.setBitmap(target, context, result, from, noFade, forceFade, debugging);
-        }
-
-        if (callback != null) {
-            callback.onSuccess();
-        }
+    ImageView target = this.target.get();
+    if (target == null) {
+      return;
     }
 
-    @Override
-    public void error() {
-        ImageView target = this.target.get();
-        if (target == null) {
-            return;
-        }
-        if (errorResId != 0) {
-            target.setImageResource(errorResId);
-        } else if (errorDrawable != null) {
-            target.setImageDrawable(errorDrawable);
-        }
+    Context context = picasso.context;
+    boolean indicatorsEnabled = picasso.indicatorsEnabled;
+      if (round) {
+        PicassoRoundDrawable.setBitmap(target, context, result, from, noFade, forceFade, indicatorsEnabled, borderSize, borderColor, roundSize);
+      } else {
+        PicassoDrawable.setBitmap(target, context, result, from, noFade, forceFade, indicatorsEnabled);
+      }
 
-        if (callback != null) {
-            callback.onError();
-        }
+    if (callback != null) {
+      callback.onSuccess();
+    }
+  }
+
+  @Override public void error() {
+    ImageView target = this.target.get();
+    if (target == null) {
+      return;
+    }
+    if (errorResId != 0) {
+      target.setImageResource(errorResId);
+    } else if (errorDrawable != null) {
+      target.setImageDrawable(errorDrawable);
     }
 
-    @Override
-    void cancel() {
-        super.cancel();
-        if (callback != null) {
-            callback = null;
-        }
+    if (callback != null) {
+      callback.onError();
     }
+  }
+
+  @Override void cancel() {
+    super.cancel();
+    if (callback != null) {
+      callback = null;
+    }
+  }
 }

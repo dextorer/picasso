@@ -15,8 +15,8 @@
  */
 package com.squareup.picasso;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
@@ -27,170 +27,149 @@ import android.graphics.Rect;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.SystemClock;
 import android.widget.ImageView;
 
 import static android.graphics.Color.WHITE;
 import static com.squareup.picasso.Picasso.LoadedFrom.MEMORY;
 
-final class PicassoDrawable extends Drawable {
-    // Only accessed from main thread.
-    private static final Paint DEBUG_PAINT = new Paint();
+final class PicassoDrawable extends BitmapDrawable {
+  // Only accessed from main thread.
+  private static final Paint DEBUG_PAINT = new Paint();
+  private static final float FADE_DURATION = 350f; //ms
 
-    private static final float FADE_DURATION = 350f; //ms
-
-    /**
-     * Create or update the drawable on the target {@link ImageView} to display the supplied bitmap
-     * image.
-     */
-    static void setBitmap(ImageView target, Context context, Bitmap bitmap,
-                          Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging) {
-        Drawable placeholder = target.getDrawable();
-        if (placeholder instanceof AnimationDrawable) {
-            ((AnimationDrawable) placeholder).stop();
-        }
-        PicassoDrawable drawable =
-                new PicassoDrawable(context, placeholder, bitmap, loadedFrom, noFade, forceFade, debugging);
-        target.setImageDrawable(drawable);
+  /**
+   * Create or update the drawable on the target {@link ImageView} to display the supplied bitmap
+   * image.
+   */
+  static void setBitmap(ImageView target, Context context, Bitmap bitmap,
+      Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging) {
+    Drawable placeholder = target.getDrawable();
+    if (placeholder instanceof AnimationDrawable) {
+      ((AnimationDrawable) placeholder).stop();
     }
+    PicassoDrawable drawable =
+        new PicassoDrawable(context, bitmap, placeholder, loadedFrom, noFade, forceFade, debugging);
+    target.setImageDrawable(drawable);
+  }
 
-    /**
-     * Create or update the drawable on the target {@link ImageView} to display the supplied
-     * placeholder image.
-     */
-    static void setPlaceholder(ImageView target, int placeholderResId, Drawable placeholderDrawable) {
-        if (placeholderResId != 0) {
-            target.setImageResource(placeholderResId);
-        } else {
-            target.setImageDrawable(placeholderDrawable);
-        }
-        if (target.getDrawable() instanceof AnimationDrawable) {
-            ((AnimationDrawable) target.getDrawable()).start();
-        }
+  /**
+   * Create or update the drawable on the target {@link ImageView} to display the supplied
+   * placeholder image.
+   */
+  static void setPlaceholder(ImageView target, int placeholderResId, Drawable placeholderDrawable) {
+    if (placeholderResId != 0) {
+      target.setImageResource(placeholderResId);
+    } else {
+      target.setImageDrawable(placeholderDrawable);
     }
-
-    private final boolean debugging;
-    private final float density;
-    private final Picasso.LoadedFrom loadedFrom;
-    final BitmapDrawable image;
-
-    Drawable placeholder;
-
-    long startTimeMillis;
-    boolean animating;
-    int alpha = 0xFF;
-
-    PicassoDrawable(Context context, Drawable placeholder, Bitmap bitmap,
-                    Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFade, boolean debugging) {
-        Resources res = context.getResources();
-
-        this.debugging = debugging;
-        this.density = res.getDisplayMetrics().density;
-
-        this.loadedFrom = loadedFrom;
-
-        this.image = new BitmapDrawable(res, bitmap);
-
-        boolean fade = loadedFrom != MEMORY && !noFade;
-        if (forceFade) {
-            fade = true;
-        }
-        if (fade) {
-            this.placeholder = placeholder;
-            animating = true;
-            startTimeMillis = SystemClock.uptimeMillis();
-        }
+    if (target.getDrawable() instanceof AnimationDrawable) {
+      ((AnimationDrawable) target.getDrawable()).start();
     }
+  }
 
-    @Override
-    public void draw(Canvas canvas) {
-        if (!animating) {
-            image.draw(canvas);
-        } else {
-            float normalized = (SystemClock.uptimeMillis() - startTimeMillis) / FADE_DURATION;
-            if (normalized >= 1f) {
-                animating = false;
-                placeholder = null;
-                image.draw(canvas);
-            } else {
-                if (placeholder != null) {
-                    placeholder.draw(canvas);
-                }
+  private final boolean debugging;
+  private final float density;
+  private final Picasso.LoadedFrom loadedFrom;
 
-                int partialAlpha = (int) (alpha * normalized);
-                image.setAlpha(partialAlpha);
-                image.draw(canvas);
-                image.setAlpha(alpha);
-                invalidateSelf();
-            }
-        }
+  Drawable placeholder;
 
-        if (debugging) {
-            drawDebugIndicator(canvas);
-        }
+  long startTimeMillis;
+  boolean animating;
+  int alpha = 0xFF;
+
+  @SuppressLint("NewApi")
+  PicassoDrawable(Context context, Bitmap bitmap, Drawable placeholder,
+      Picasso.LoadedFrom loadedFrom, boolean noFade, boolean forceFace, boolean debugging) {
+    super(context.getResources(), bitmap);
+
+    this.debugging = debugging;
+    this.density = context.getResources().getDisplayMetrics().density;
+
+    this.loadedFrom = loadedFrom;
+
+    boolean fade = loadedFrom != MEMORY && !noFade;
+    if (forceFace) {
+      fade = true;
     }
-
-    @Override
-    public int getIntrinsicWidth() {
-        return image.getIntrinsicWidth();
+    if (fade) {
+      this.placeholder = placeholder;
+      animating = true;
+      startTimeMillis = SystemClock.uptimeMillis();
     }
+  }
 
-    @Override
-    public int getIntrinsicHeight() {
-        return image.getIntrinsicHeight();
-    }
-
-    @Override
-    public void setAlpha(int alpha) {
-        this.alpha = alpha;
+  @Override public void draw(Canvas canvas) {
+    if (!animating) {
+      super.draw(canvas);
+    } else {
+      float normalized = (SystemClock.uptimeMillis() - startTimeMillis) / FADE_DURATION;
+      if (normalized >= 1f) {
+        animating = false;
+        placeholder = null;
+        super.draw(canvas);
+      } else {
         if (placeholder != null) {
-            placeholder.setAlpha(alpha);
+          placeholder.draw(canvas);
         }
-        image.setAlpha(alpha);
-    }
 
-    @Override
-    public void setColorFilter(ColorFilter cf) {
-        if (placeholder != null) {
-            placeholder.setColorFilter(cf);
+        int partialAlpha = (int) (alpha * normalized);
+        super.setAlpha(partialAlpha);
+        super.draw(canvas);
+        super.setAlpha(alpha);
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.GINGERBREAD_MR1) {
+          invalidateSelf();
         }
-        image.setColorFilter(cf);
+      }
     }
 
-    @Override
-    public int getOpacity() {
-        return image.getOpacity();
+    if (debugging) {
+      drawDebugIndicator(canvas);
     }
+  }
 
-    @Override
-    protected void onBoundsChange(Rect bounds) {
-        super.onBoundsChange(bounds);
-
-        image.setBounds(bounds);
-        if (placeholder != null) {
-            placeholder.setBounds(bounds);
-        }
+  @Override public void setAlpha(int alpha) {
+    this.alpha = alpha;
+    if (placeholder != null) {
+      placeholder.setAlpha(alpha);
     }
+    super.setAlpha(alpha);
+  }
 
-    private void drawDebugIndicator(Canvas canvas) {
-        DEBUG_PAINT.setColor(WHITE);
-        Path path = getTrianglePath(new Point(0, 0), (int) (16 * density));
-        canvas.drawPath(path, DEBUG_PAINT);
-
-        DEBUG_PAINT.setColor(loadedFrom.debugColor);
-        path = getTrianglePath(new Point(0, 0), (int) (15 * density));
-        canvas.drawPath(path, DEBUG_PAINT);
+  @Override public void setColorFilter(ColorFilter cf) {
+    if (placeholder != null) {
+      placeholder.setColorFilter(cf);
     }
+    super.setColorFilter(cf);
+  }
 
-    private static Path getTrianglePath(Point p1, int width) {
-        Point p2 = new Point(p1.x + width, p1.y);
-        Point p3 = new Point(p1.x, p1.y + width);
-
-        Path path = new Path();
-        path.moveTo(p1.x, p1.y);
-        path.lineTo(p2.x, p2.y);
-        path.lineTo(p3.x, p3.y);
-
-        return path;
+  @Override protected void onBoundsChange(Rect bounds) {
+    if (placeholder != null) {
+      placeholder.setBounds(bounds);
     }
+    super.onBoundsChange(bounds);
+  }
+
+  private void drawDebugIndicator(Canvas canvas) {
+    DEBUG_PAINT.setColor(WHITE);
+    Path path = getTrianglePath(new Point(0, 0), (int) (16 * density));
+    canvas.drawPath(path, DEBUG_PAINT);
+
+    DEBUG_PAINT.setColor(loadedFrom.debugColor);
+    path = getTrianglePath(new Point(0, 0), (int) (15 * density));
+    canvas.drawPath(path, DEBUG_PAINT);
+  }
+
+  private static Path getTrianglePath(Point p1, int width) {
+    Point p2 = new Point(p1.x + width, p1.y);
+    Point p3 = new Point(p1.x, p1.y + width);
+
+    Path path = new Path();
+    path.moveTo(p1.x, p1.y);
+    path.lineTo(p2.x, p2.y);
+    path.lineTo(p3.x, p3.y);
+
+    return path;
+  }
 }
