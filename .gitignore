@@ -29,3 +29,6 @@ gen-external-apklibs
 tmp
 
 .DS_Store
+
+# Local
+local.properties

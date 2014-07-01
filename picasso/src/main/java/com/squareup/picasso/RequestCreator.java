@@ -565,13 +565,14 @@ public class RequestCreator {
           PicassoRoundDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.indicatorsEnabled, borderSize, borderColor, roundSize);
         } else {
           PicassoDrawable.setBitmap(target, picasso.context, bitmap, MEMORY, noFade, forceFade, picasso.indicatorsEnabled);
-        if (picasso.loggingEnabled) {
-          log(OWNER_MAIN, VERB_COMPLETED, request.plainId(), "from " + MEMORY);
+          if (picasso.loggingEnabled) {
+            log(OWNER_MAIN, VERB_COMPLETED, request.plainId(), "from " + MEMORY);
+          }
+          if (callback != null) {
+            callback.onSuccess();
+          }
+          return;
         }
-        if (callback != null) {
-          callback.onSuccess();
-        }
-        return;
       }
     }
 
@@ -582,7 +583,7 @@ public class RequestCreator {
     }
 
     Action action =
-        new ImageViewAction(picasso, target, finalData, skipMemoryCache, noFade, forceFade, errorResId,
+        new ImageViewAction(picasso, target, request, skipMemoryCache, noFade, forceFade, errorResId,
             errorDrawable, requestKey, callback, useRoundDrawables, borderSize, borderColor, roundSize);
 
     picasso.enqueueAndSubmit(action);
