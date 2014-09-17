@@ -45,7 +45,7 @@ class MediaStoreBitmapHunter extends ContentStreamBitmapHunter {
 
   @Override Bitmap decode(Request data) throws IOException {
     ContentResolver contentResolver = context.getContentResolver();
-    setExifRotation(getExifOrientation(contentResolver, data.uri));
+    //setExifRotation(getExifOrientation(contentResolver, data.uri));
     String mimeType = contentResolver.getType(data.uri);
     boolean isVideo = mimeType != null && mimeType.startsWith("video/");
 
